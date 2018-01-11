@@ -1,4 +1,4 @@
 # ImageJ-Macros
 A public repository for ImageJ Macros.
 
-Maintained by B.van den Broek and R.Harkes from the Netherlands Cancer Institute.
+Maintained by Bram van den Broek and Rolf Harkes from the Netherlands Cancer Institute.
