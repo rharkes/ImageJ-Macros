@@ -6,7 +6,7 @@
 
 
 /*
- * Macro template to process multiple images in a folder
+ * Macro template to process multiple GSDIM .lif images in a folder
  * By R.Harkes & L.Nahidi (c) GPLv3 2018
  * 10-01-2018
  * Version 1.0
