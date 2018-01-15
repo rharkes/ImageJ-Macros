@@ -1,3 +1,4 @@
+//This macro converts all series into .TIF files
 
 run("Bio-Formats Macro Extensions");
 
