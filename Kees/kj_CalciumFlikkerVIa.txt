@@ -6,6 +6,8 @@ In the analysis stage, a threshold is set to the whole stack to discriminate fli
 which results in brighter areas for active flickers and dimmer for less active flickers. Automated particle analysis
 then identifies the flickers, adds them to the ROI manager and measures them into Results.xls. Inbetween, the user
 can manually reject or add ROIs. 
+
+BTW, notice the running bkgnd subtraction long before the SR macro!
 */
 
 requires("1.33s");
