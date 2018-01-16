@@ -35,7 +35,7 @@ function processFile(input, output, file) {
 	intfilepath = input + "\\" + file;
 	taufilepath = input + "\\" + substring(file,0,lengthOf(file)-5)+"tau.tif";
 	outfilepath = output + "\\" + file;
-
+	
 	open(intfilepath);
 //	run("Subtract Background...", "rolling=50");
 	run("8-bit");
@@ -46,12 +46,22 @@ function processFile(input, output, file) {
 	run("Analyze Particles...", "size="+minsize+"-Infinity circularity=0.25-1.00 exclude add");
 	close();
 	open(intfilepath);
-	run("From ROI Manager"); //overlay rois
-	saveAs("Tiff",outfilepath);
-	close();
+	
+	n = roiManager("count"); 
+	 if (n > 0) {
+	 	run("From ROI Manager"); 
+	 } //overlay rois, zorgt er gelijk voor dat het programma niet stopt als er geen Rois gevonden worden.
+	 saveAs("Tiff",outfilepath);
+	 close();
+		
+
+	
+	
 	open(taufilepath);
 	roiManager("Show None");
 	roiManager("Show All");
 	roiManager("Measure");
+	saveAs("Results", output + "\\Results.csv");
 	close();
+	
 }
