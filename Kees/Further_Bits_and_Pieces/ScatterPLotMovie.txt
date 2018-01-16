@@ -1,0 +1,53 @@
+//scatterplot tryout van kees
+
+open("C:\\Users\\k.jalink\\Desktop\\FF\\Stablized ExampleMovie.tif");
+for (i=1; i < 40; i++){
+	setSlice(1);
+	run("Make Substack...", "  slices=1");
+	rename("een.tif");
+
+run("Clear Results");
+run("Set Measurements...", "  mean redirect=None decimal=3");
+run("Measure");
+getal=getResult("Mean",0);
+run("Clear Results");
+selectWindow("een.tif");
+run("Multiply...", "value="+3/getal+" ");
+
+
+	selectWindow("Stablized ExampleMovie.tif");
+	run("Delete Slice");
+	run("Next Slice [>]");
+	run("Make Substack...", "  slices=1");
+	rename("twee.tif");
+
+run("Clear Results");
+run("Set Measurements...", "  mean redirect=None decimal=3");
+run("Measure");
+getal=getResult("Mean",0);
+run("Clear Results");
+selectWindow("twee.tif");
+run("Multiply...", "value="+3/getal+" ");
+
+	run("Colocalization Finder...", "image1=een.tif image2=twee.tif image3=[Stablized ExampleMovie.tif] specify=0");
+	selectWindow("ScatterPlot");
+exit;
+	run("8-bit");
+	saveAs("Tiff", "C:\\Users\\k.jalink\\Desktop\\FF\\ScatterPlot"+i+".tif");
+	selectWindow("een.tif");
+	close();
+	selectWindow("twee.tif");
+	close();
+	selectWindow("Composite_and_Mask");
+	close();
+	selectWindow("ScatterPlot"+i+".tif");
+	close();
+
+}
+run("Image Sequence...", "open=C:\\Users\\k.jalink\\Desktop\\FF\\ScatterPlot1.tif number=64 starting=1 increment=1 scale=100 file=Scat or=[] sort");
+//exit;
+//setTool("polygon");
+makePolygon(0,202,108,0,255,0,255,151,86,255,0,255);
+run("Fill", "slice");
+
+

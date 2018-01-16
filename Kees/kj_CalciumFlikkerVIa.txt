@@ -1,0 +1,251 @@
+/*kj_CalciumFlikker  feb 2010 30/03/10
+This version takes all images from folder D:\Input, smoothes them one by one into folder D:\Effe,
+and then subtracts a running bkgr which is the average of 2 images before and 2 images after the current frame.
+It then visualizes using LUT and B&C. Version II 
+In the analysis stage, a threshold is set to the whole stack to discriminate flickers. The stack is Z-projected
+which results in brighter areas for active flickers and dimmer for less active flickers. Automated particle analysis
+then identifies the flickers, adds them to the ROI manager and measures them into Results.xls. Inbetween, the user
+can manually reject or add ROIs. 
+*/
+
+requires("1.33s");
+kjTempFolder = "D:\\Effe\\";
+kjOutputFolder = "D:\\Output\\";
+run("Close All Without Saving");
+setFreem = true;
+firstPic = 0;
+
+//dir = getDirectory("Choose the folder with TIRF data. ");
+dir="D:\\Input\\"	; //***********************************************************	
+
+plaatjes = getFileList(dir);		
+filmLength = plaatjes.length;
+if (filmLength <1) exit;
+lastPic=filmLength-1;
+kjKernelSize = 19;
+kjFreemReet=20;
+kjBackGround = 28;
+kjLUTLower = 0.95;
+kjLUTUpper = 1.25;
+kjThreshLower = 1.09;
+kjThreshUpper = 2;
+kjThreshFlikker = 3;
+kjMinSize = 70;
+kjCloseSize = 3;
+kjTuneSteps = true;
+kjReUseProcessedData = true;
+kjQuickPlots = false;
+
+
+        Dialog.create("Adjust Parameters....");				//DIALOG CREATE section
+        Dialog.addCheckbox("no, it's enough", 0); 			// 		<1>NOTE it reads checks and texts in this order!!!!!
+        Dialog.addCheckbox("re-use preprocessed", kjReUseProcessedData);   //	<1A>
+        Dialog.addNumber("SmoothKernel",kjKernelSize); 		//		<2>
+        Dialog.addNumber("FrameRate",kjFreemReet); 			//		<3>
+        Dialog.addNumber("AdjustLUTlower", kjLUTLower);		//		<4>
+        Dialog.addNumber("AdjustLUTUpper", kjLUTUpper);		//		<5>
+        Dialog.addNumber("AdjustThreshlower", kjThreshLower);	//		<6>
+        Dialog.addNumber("AdjustThreshUpper", kjThreshUpper);	//		<7>
+        Dialog.addNumber("ThreshFlickerIntensity", kjThreshFlikker);	//		<8>
+        Dialog.addNumber("MinFlikkerSize", kjMinSize);			//		<9>
+        Dialog.addNumber("MaskCloseSize", kjCloseSize);		//		<10>
+        Dialog.addCheckbox("Tune each step", kjTuneSteps);		//		<11>
+        Dialog.addCheckbox("Quick FlikkerView", kjQuickPlots);		//		<12>
+        Dialog.addCheckbox("set frames to analyse",setFreem);	//		<at the end>
+        Dialog.addNumber("FirstPic",firstPic);				//		<last>
+        Dialog.addNumber("LastPic",lastPic);				//		<very last>
+        Dialog.show;
+	if (lastPic > filmLength) exit;
+
+        StopMaar = Dialog.getCheckbox();				//		<1>DIALOG READOUT section
+        if (StopMaar==true) exit;
+        kjReUseProcessedData=Dialog.getCheckbox();			//		<1A>
+        kjKernelSize = Dialog.getNumber(); 				//		<2>
+        kjFreemReet = Dialog.getNumber(); 				//		<3>
+        kjLUTLower = Dialog.getNumber();				//		<4>
+        kjLUTUpper = Dialog.getNumber();				//		<5>
+        kjThreshLower = Dialog.getNumber();				//		<6>
+        kjThreshUpper = Dialog.getNumber();				//		<7>
+        kjThresFlikker = Dialog.getNumber();				//		<8>
+        kjMinSize = Dialog.getNumber();					//		<9>
+        kjCloseSize=Dialog.getNumber();					//		<10>
+        kjTuneSteps=Dialog.getCheckbox();				//		<11>
+        kjQuickPlots = Dialog.getCheckbox();				//		<12>
+        setFreem = Dialog.getCheckbox();				//		<at the end>
+        if (setFreem==true) firstPic = Dialog.getNumber();		//		<last>
+        if (setFreem==true) lastPic = Dialog.getNumber();		//		<very last>
+
+run("Animation Options...", "speed=kjfreemreet first=1 last=9999 start");
+
+print(dir);
+print("First Pic "+plaatjes[firstPic]);
+print("Last Pic "+plaatjes[lastPic]);
+
+if (kjReUseProcessedData == false) { 					//this whole block is skipped if I re-analyze old data
+runMacro("kj_EmptyFolder", kjTempFolder);    			//Empty the temp dir with call to kj Macro in IJ\macros folder
+runMacro("kj_EmptyFolder", kjOutputFolder);				//Empty the Output dir with call to kj Macro
+setBatchMode(true);
+print("Start Smoothing Loop");
+
+for (i=firstPic; i<=lastPic;i++){
+	open(dir+plaatjes[i]);
+	makeRectangle(0,0,kjKernelSize, kjKernelSize);		//this is used to set the smoothKernel
+	//run("kj DirectionalSmoothFastBorder"); 			// [1] This version kjSmoothes pic by pic to allow very big datasets. Uses kj Plugin, slower but no borders
+	run("kj DirectionalSmoothFast"); 				// [2] kjSmoothes pic by pic to allow very big datasets. Uses kj Plugin, faster but border
+	saveAs("Tiff", "D:\\Effe\\"+plaatjes[i]);
+	close();
+	close();
+	showProgress(i/(lastPic-firstPic));
+	print("LoopSmooth "+ i);
+}
+
+print("Start Bkg Subtraction Loop");					//subtracts the bkg so as to express DeltaF/F
+for (i=firstPic; i<lastPic;i++){						//the bkg actually is the min value of 2 earlier pics and 2 later pics
+	print("LoopBkGrnd "+i);
+	twoBefore = firstPic;					
+	if (i > firstPic + 15) twoBefore = i-15;
+	oneBefore=firstPic;
+	if (i > firstPic+5) oneBefore = i-5;
+	oneAfter=lastPic;
+	if (i < lastPic-5) oneAfter = i + 5;
+	twoAfter=lastPic;
+	if (i < lastPic-15) twoAfter = i + 15;
+	open("D:\\Effe\\"+plaatjes[oneBefore]);
+	rename("A");
+	open("D:\\Effe\\"+plaatjes[twoBefore]);
+	rename("B");
+	imageCalculator("Min create", "A","B");
+	rename("C");
+	open("D:\\Effe\\"+plaatjes[oneAfter]);
+	rename("D");
+	imageCalculator("Min create", "C","D");
+	rename("E");
+	open("D:\\Effe\\"+plaatjes[twoAfter]);
+	rename("F");
+	imageCalculator("Min create", "E","F");
+	rename("FinalBkg");
+	run("Subtract...", "value=28");
+	run("Add...", "value=28");					//OK; now subtract this from the image and put in third directory	
+	open("D:\\Effe\\"+plaatjes[i]);
+	rename("G");
+	imageCalculator("Divide create 32-bit", "G", "FinalBkg");
+	saveAs("Tiff", "D:\\Output\\"+plaatjes[i]);
+	run("Close All Without Saving");
+	showProgress(i/(lastPic-firstPic));
+}
+setBatchMode(false);
+}									//end of the use-processed-data if-block
+
+run("Image Sequence...", "open=D:\\Output\\"+plaatjes[firstPic]+" number="+lastPic+" starting=1 increment=1 scale=100 file=[] or=[] sort");
+rename("Out.tif");
+run("Fire");
+run("Brightness/Contrast...");
+setMinAndMax(kjLUTLower, kjLUTUpper);
+if (kjTuneSteps==true) waitForUser("[0] Inspect movie; set B/C and press OK");
+
+selectWindow("Out.tif"); 						//just in case user has selected something else
+run("blue_orange_icb");
+run("Threshold...");
+//setAutoThreshold();
+setThreshold(kjThreshLower, kjThreshUpper);
+selectWindow("Threshold"); //updates the Threshold window
+selectWindow("Out.tif");
+if (kjTuneSteps==true) waitForUser("[1] Fine-tune Threshold and press OK");
+
+selectWindow("Out.tif");
+run("Convert to Mask", " ");
+run("Options...", "iterations="+kjCloseSize+" edm=8-bit count="+kjCloseSize);
+run("Close-", "stack");
+run("Tile");
+if (kjTuneSteps==true) waitForUser("[2] Check Mask");
+
+selectWindow("Out.tif");
+run("Divide...", "value=255 stack");
+run("Z Project...", "start=1 stop=30 projection=[Sum Slices]");
+rename("HeatMap.tif");
+run("Fire");
+open("D:\\Output\\"+plaatjes[firstPic]); 				//this part is going to create 1-graylevel bkgrn in cells
+rename("even.tif");
+setThreshold(0.80, 2);  						//lines out the whole cell
+run("Make Binary");   							//makes mask
+run("Divide...", "value=255");						//sets the mask intensity at 1
+imageCalculator("Add create 32-bit", "HeatMap.tif","even.tif");
+rename("Heat3D.tif");
+selectWindow("even.tif");
+run("Close");
+selectWindow("HeatMap.tif");
+run("Close");	
+run("Tile");
+if (kjTuneSteps==true) waitForUser("[3] Check Summed Hot-spots");
+
+selectWindow("Heat3D.tif");
+run("Duplicate...", "title=[Flikkers.tif]");
+run("Smooth");
+run("Smooth");
+run("Smooth");
+setThreshold(kjThreshFlikker,255); 					// select minimum # that is counted as flikkers
+selectWindow("Threshold"); 						//updates the Threshold window
+
+run("Tile");
+selectWindow("Flikkers.tif");
+if (kjTuneSteps==true) waitForUser("[4] Fine-tune Spot Detection with Threshold and press OK");
+
+run("Analyze Particles...", "size="+kjMinSize+"-Infinity pixel circularity=0.00-1.00 show=Outlines display exclude clear add");
+selectWindow("Out.tif");
+run("Close"); 								//>>>>>>This one is necessary because of out-of-mem condition<<<<<<<
+if (isOpen("Drawing of Flikkers.tif")){
+selectWindow("Drawing of Flikkers.tif");
+run("Close"); 
+}							
+run("Image Sequence...", "open=D:\\Output\\"+plaatjes[firstPic]+" number="+lastPic+" starting=1 increment=1 scale=100 file=[] or=[] sort");
+rename("Out.tif");
+setMinAndMax(kjLUTLower, kjLUTUpper);
+run("Fire");
+selectWindow("Out.tif");
+setOption("Show All",true);
+run("Tile");
+
+selectWindow("Out.tif");
+if (kjTuneSteps==true) waitForUser("[5] Optionally reject ROIs manually or add new ones; press OK");
+selectWindow("Out.tif");
+run("Set Measurements...", "mean redirect=None decimal=3");
+roiManager("Multi Measure");
+//saveAs("Measurements", "D:\\Output\\Results.xls"); 			//and the only thing you have to do is open the excell and make the plot
+
+selectWindow("Heat3D.tif");
+getDimensions(w, h, c, s, f); 						//next few lines throw away the unsmoothed outside pixels
+kjKernelSize=19;
+even = round(kjKernelSize/2);
+makeRectangle(even,even,w-kjKernelSize, h-kjKernelSize);
+run("Clear Outside");	
+run("Interactive 3D Surface Plot", "plotType=3 smooth=1.5 colorType=2 min=0 max=100 grid=256 light=0.5" );
+
+selectWindow("Heat3D.tif");
+run("Calibration Bar...", "location=[Upper Right] fill=None label=White number=5 decimal=0 font=12 zoom=1 bold");
+run("Tile");
+
+if (kjQuickPlots == true){
+  for (j = 1; j < roiManager("count"); j++){
+    if (getBoolean("[6] press OK to see quick plot of flikkers;  <Alt+PrtScr> copies the window for pasting")){
+      kjPlotName = "Mean"+j;
+      kjValues = newArray(nResults);
+      for (i=0; i<nResults; i++){
+      kjValues[i]=getResult(kjPlotName,i);
+      }
+          Plot.create("Flikker Plot " +kjPlotName , "Frames", "Intensity");
+          Plot.setLimits(0, nResults, 0.9,1.3);
+          Plot.setLineWidth(1);
+          Plot.setColor("darkGray");
+          Plot.add("line", kjValues);
+          Plot.show();
+    }
+  }
+}
+
+
+
+
+
+
+
+

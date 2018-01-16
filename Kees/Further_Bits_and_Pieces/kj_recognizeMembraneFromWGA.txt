@@ -1,0 +1,12 @@
+
+resetThreshold();
+run("Z Project...", "start=1 stop=4 projection=Median");
+setAutoThreshold(); //78 255
+setAutoThreshold();
+run("Convert to Mask");
+run("Smooth");
+run("Smooth");
+run("Smooth");
+setAutoThreshold();
+setThreshold(118, 255);
+run("Convert to Mask");

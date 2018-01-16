@@ -1,0 +1,49 @@
+// Framework/template to recursively open subfolders in a user-specified directory.
+// Modify it to batch-process any directory structure with e.g. kj_QuantifyScratchAssay 
+// or kj_CalciumFlikkerBatchVersion
+
+  kjMinPicSize = 75000;
+  dir = getDirectory("Choose a Directory to BatchProcess ");
+  count = 1;
+  listFiles(dir); 
+
+
+  function listFiles(dir) {
+     list = getFileList(dir);
+     for (i=0; i<list.length; i++) {
+        if (endsWith(list[i], "/")){ 			// then it is a folder
+            print("found dir "+list[i]);		// temporary to see if it works
+            doThisInBatchMode();
+            listFiles(""+dir+list[i]);			// recurse this function on that folder. This works OK because the variables are local within listFiles 
+	}
+     }
+  }
+
+
+function doThisInBatchMode(){ 		//******************************
+  //add here the statements or macro that needs to be executed in each subfolder
+  // then save the macro as another_name.txt so you don't overwrite the template
+
+  kjPath = "" + dir + list[i];
+  print(kjPath);
+  plaatjes= getFileList(kjPath);
+  folderContainsPics = false;
+  for(i=0; i<plaatjes.length; i++){
+    if (endsWith(plaatjes[i],".tif")) {
+      kjFileSize = File.length(kjPath+"\\"+plaatjes[i]);
+       if (kjFileSize> kjMinPicSize) {
+         folderContainsPics=true;
+         //print("length "+kjFileSize);
+         //print(folderContainsPics);
+        }
+    }
+  }
+  if (folderContainsPics) {
+    run("Image Sequence...", "open=["+kjPath+"\\"+plaatjes[1]+" number="+plaatjes.length+" starting=1 increment=1 scale=100 file=[] or=[] sort");
+    run("Fire");
+    doCommand("Start Animation [\\]");
+    waitForUser("next movie");
+    run("Close");
+  }
+} 						//*****************doThisInBatchMode ends here
+

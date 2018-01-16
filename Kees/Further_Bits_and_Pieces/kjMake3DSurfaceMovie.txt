@@ -1,0 +1,58 @@
+//pic-by-pic version works on output dir
+dir = "D:\\Output\\";
+plaatjes = getFileList(dir);	
+lastPic=plaatjes.length-1;
+kjKernelSize = 23
+firstPic = 1;
+getDimensions(w, h, c, s, f); 						//next few lines throw away the unsmoothed outside pixels
+even = round(kjKernelSize/2);
+
+setBatchMode(true);
+for (i=firstPic; i<=lastPic;i++){
+	open(dir+plaatjes[i]);
+run("Subtract...", "value=0.9");
+run("Multiply...", "value=2000.000");
+//run("8-bit");
+//setMinAndMax(40, 255);
+makeRectangle(11, 12, 387, 390);
+run("Crop");
+//exit;
+//	run("Interactive 3D Surface Plot", "plotType=3 smooth=5 colorType=2 min=28 max=255 grid=256 light=0.5 snapshot=1" );
+	saveAs("Tiff", "D:\\FILM\\"+plaatjes[i]);
+	showProgress(i/(lastPic-firstPic));
+	print("LoopSmooth "+ i);
+}
+  setBatchMode(false);
+
+exit;
+
+run("16-bit"); 
+n = nSlices;
+  if (n==1) exit("Stack required");
+  stack1 = getImageID;
+  stack2 = 0;
+
+  for (i=1; i<=n; i++) {
+    showProgress(i, n);
+    selectImage(stack1);
+    setSlice(i);
+    run("Duplicate...", "title=temp");
+    temp = getImageID;
+run("Interactive 3D Surface Plot", "plotType=3 smooth=8 colorType=2 min=6 max=100 grid=256 light=0.5 snapshot=1" );
+    run("Copy");
+    w = getWidth; h = getHeight;
+    close;
+    selectImage(temp);
+    close;  
+    if (stack2==0) {
+     newImage("Plots", "RGB", w, h, 1);
+     stack2 = getImageID;
+    } else {
+     selectImage(stack2);
+     run("Add Slice");
+    }
+    run("Paste");
+  }
+  setSlice(1);
+  run("Select None");
+  setBatchMode(false);

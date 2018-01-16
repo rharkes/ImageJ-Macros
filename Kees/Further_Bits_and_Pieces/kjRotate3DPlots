@@ -1,0 +1,29 @@
+  //run with "help" to list options
+  run("Interactive 3D Surface Plot","help"); 
+  run("Blobs (25K)");
+  run("Invert");
+  img1 = getImageID;
+  stack = 0;
+  setBatchMode(true);
+  n = 10;
+  for (i=0; i<n; i++) {
+    showProgress(i, n);
+    selectImage(img1);
+    angleZ = -i * 4 + 60;
+    run("Interactive 3D Surface Plot",
+      "plotType=3 smooth=11 colorType=3 snapshot=1 rotationZ="+angleZ);
+    run("Copy");
+    w = getWidth; h = getHeight;
+    close();  
+    if (stack==0) {
+     newImage("Plots", "RGB", w, h, 1);
+     stack = getImageID;
+    } else {
+     selectImage(stack);
+     run("Add Slice");
+    }
+    run("Paste");
+  }
+  setSlice(1);
+  run("Select None");
+  setBatchMode(false);

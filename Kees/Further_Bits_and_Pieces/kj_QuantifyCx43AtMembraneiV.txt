@@ -1,0 +1,95 @@
+//kj, april 2010.  requires images Mem.tif and Connexin.tif in C:\effe
+//make sure that Process>Binary>Options>BlackBackground is CHECKED (On).
+
+run("Close All Without Saving");
+run("Clear Results");
+//open("c:\\effe\\Mem.tif");
+memFileName = File.openDialog("select the file with MEMBRANE staining....");
+kjFolderName = File.directory;
+open(memFileName);
+rename("Mem.tif");
+run("Smooth");
+run("Smooth");
+run("8-bit");
+run("Duplicate...", "title=twee.tif");
+run("Enhance Contrast", "saturated=0.35");
+selectWindow("Mem.tif");
+run("Duplicate...", "title=drie.tif");
+setThreshold(61, 255);
+run("Threshold...");
+waitForUser("FineAdjust Threshold Membrane, press Apply and then close this msgBox with OK.....");
+run("Convert to Mask");
+run("8-bit");
+run("Subtract...", "value=90");
+
+run("8-bit");
+run("Images to Stack", "name=Stack title=[] use");
+run("Select All");
+run("Fill", "slice"); //separated the 3 colors in a stack and emptied the Red channel to free it for drawing
+run("Stack to RGB"); //re-generate a RGB image
+
+run("Colors...", "foreground=red background=white selection=yellow");
+waitForUser("select red pen, width ~5 and draw all membranes.... Press OK when done.");
+run("RGB Stack");
+selectWindow("Stack");
+close();
+run("Next Slice [>]"); //now the info from G and B channels is no longer needed
+run("Delete Slice");
+run("Z Project...", "start=1 stop=2 projection=[Sum Slices]");
+run("8-bit");
+setThreshold(5, 255);
+run("Convert to Mask");
+run("Invert");
+waitForUser("select gummy and remove internal staining.... Press OK when done.");
+w=getWidth();
+h=getHeight();
+print(w);
+makeRectangle(3,3, w-6, h-6); //prevents erosion from the borders. works only for this size images!!!!!!!
+//run("Erode");
+//run("Erode");
+//run("Erode");
+rename("Mask.tif");
+
+//open("C:\\effe\\Connexin.tif");
+connexinFileName=File.openDialog("Select the file with CONNEXIN staining...");
+open(connexinFileName);
+rename("Connexin.tif");
+run("RGB Color");
+run("8-bit");
+setThreshold(61, 255);
+//run("Threshold...");
+waitForUser("FineAdjust Threshold Connexins, press Apply and then close this msgBox with OK.....");
+run("Convert to Mask");
+run("Measure"); //total Cx42 = mean greylevel of this pic, 0--255
+Cx43=getResult("Mean",0) / 255; 
+print("Total fraction of image containing Cx43 ",Cx43);
+selectWindow("Mask.tif");
+setThreshold(255, 255);
+run("Measure"); //fractie non-membrane :/255
+nonMem = getResult("Mean",1)/255;
+print("non-mem areaFraction of cells ",nonMem);
+Mem=1 - nonMem;
+print("mem areaFraction of cells",Mem);
+imageCalculator("Subtract create", "Connexin.tif","Mask.tif");
+rename("Connexin in Mem.tif");
+run("Measure");
+CxInMem = getResult("Mean",2)/255;
+print("Cx43 in Mem ",CxInMem);
+selectWindow("Mask.tif");
+imageCalculator("Min create", "Mask.tif","Connexin.tif");
+rename("Connexin in remainder.tif");
+run("Measure");
+CxOutOfMem = getResult("Mean",3)/255;
+print("Cx43OutOfMem ",CxOutOfMem);
+FracCx43InMem=CxInMem/Cx43;
+print("FracCx43InMem = ",FracCx43InMem);
+memEnrichment= FracCx43InMem/Mem;
+print("Enrichment in Mem ",memEnrichment);
+print("+++++++++++++++++++++++++++++++++++++++++");
+run("Tile");
+selectWindow("Mask.tif");
+save(kjFolderName+"Mask.tif");
+selectWindow("Connexin in Mem.tif");
+save(kjFolderName+"Connexin in Mem.tif");
+selectWindow("Connexin in remainder.tif");
+save(kjFolderName+"Connexin in remainder.tif");
