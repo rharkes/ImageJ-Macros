@@ -13,6 +13,7 @@
 
 run("Close All");
 processFolder(input);
+saveAs("Results", output + "\\Results.csv");
 
 // function to scan folders/subfolders/files to find files with correct suffix
 function processFolder(input) {
@@ -25,8 +26,6 @@ function processFolder(input) {
 		if(endsWith(list[i], suffix))
 			processFile(input, output, list[i]);
 	}
-	print("combined results",String.getResultsHeadings); 
-	print("combined results",results_merge); //this table contains all results 
 }
 
 
@@ -80,6 +79,5 @@ function processFile(input, output, file) {
 	roiManager("Show None");
 	roiManager("Show All");
 	roiManager("Measure");
-	saveAs("Results", output + "\\Results.csv");
 	close();
 }
