@@ -17,13 +17,16 @@ processFolder(input);
 // function to scan folders/subfolders/files to find files with correct suffix
 function processFolder(input) {
 	list = getFileList(input);
-	list = Array.sort(list)
+	list = Array.sort(list);
+	results_merge=""; //variable that will be filled with all results 
 	for (i = 0; i < list.length; i++) {
 		if(File.isDirectory(input + list[i]))
 			processFolder("" + input + list[i]);
 		if(endsWith(list[i], suffix))
 			processFile(input, output, list[i]);
 	}
+	print("combined results",String.getResultsHeadings); 
+	print("combined results",results_merge); //this table contains all results 
 }
 
 
@@ -46,16 +49,32 @@ function processFile(input, output, file) {
 	run("Analyze Particles...", "size="+minsize+"-Infinity circularity=0.25-1.00 exclude add");
 	close();
 	open(intfilepath);
-	
+	//update ROI's with threshold
 	n = roiManager("count"); 
-	 if (n > 0) {
-	 	run("From ROI Manager"); 
+	print("found " + n + " ROIs");
+	run("Set Measurements...", "area mean standard min perimeter shape feret's integrated display redirect=None decimal=3");
+	 for (i = 0 ; i<n ; i++) { //i++ betekent i=i+1
+	 	roiManager("Select", 0); //we remove this roi in the end
+	 	run("Measure");
+	 	mean=getResult("Mean");
+	 	stdv=getResult("StdDev");
+	 	IJ.deleteRows(nResults-1, nResults-1); //delete from the resultstable
+	 	thresh = mean+3*stdv;
+	 	setThreshold(0, thresh);
+	 	run("Create Selection");
+	 	roiManager("Add"); //all pixels below thresh are in this roi
+	 	roiManager("Select", newArray(0,n)); //select new roi and old roi
+	 	roiManager("AND"); //below threshold and in cell
+	 	roiManager("Add"); //new roi
+	 	roiManager("Delete"); //old roi and threshold roi
+	 }
+	 
+	 run("Enhance Contrast", "saturated=0.35");
+	 for (i = 0 ; i<n ; i++) { //i++ betekent i=i+1
+	 	run("From ROI Manager");
 	 } //overlay rois, zorgt er gelijk voor dat het programma niet stopt als er geen Rois gevonden worden.
 	 saveAs("Tiff",outfilepath);
 	 close();
-		
-
-	
 	
 	open(taufilepath);
 	roiManager("Show None");
@@ -63,5 +82,4 @@ function processFile(input, output, file) {
 	roiManager("Measure");
 	saveAs("Results", output + "\\Results.csv");
 	close();
-	
 }
