@@ -1,13 +1,10 @@
 // @File(label = "Input directory", style = "directory") input
-// @File(label = "Output directory", style = "directory") output
+// @File(label = "Output file", style = "file") output
 // @String(label = "File suffix", value = ".tif") suffix
 
 /*
  * Macro template to process multiple images in a folder
  */
-
-// See also Process_Folder.py for a version of this code
-// in the Python scripting language.
 
 processFolder(input);
 
@@ -22,21 +19,15 @@ function processFolder(input) {
 			processFile(input, output, list[i]);
 	}
 
-
-function processFile(input, output, file) {
-	print("Processing: " + input + file);
-	intfilepath = input + "\\" + file;
-	outfilepath = output + "\\" + file;
-
-	open(intfilepath);
-	
-}
+	function processFile(input, output, file) {
+		print("Processing: " + input + file);
+		intfilepath = input + "\\" + file;
+		outfilepath = output + "\\" + file;
+		open(intfilepath);
+	}
 	run("Images to Stack", "name=Stack title=[] use");
-
 	selectWindow("Stack");
-{
-	saveAs("Tiff", output + "\\" + "Stack");
-
-
-}
+	{
+		saveAs("Tiff", output + "\\" + "Stack");
+	}
 }
