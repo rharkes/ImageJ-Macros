@@ -2,9 +2,9 @@
 // @File(label = "Reference File", style = "file") Reference
 // @File(label = "Output File", style = "File") output
 
-
 /*
  * Macro to calculate lifetime from .fli file
+ * Uses fdFLIM plugin. Download at https://github.com/rharkes/fdFLIM/releases
  */
 
 run("Close All");
