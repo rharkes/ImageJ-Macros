@@ -8,12 +8,19 @@
  */
 Infinity = 1.0/0.0; 
 run("Close All");
-openfli(Sample,"Sample");
+
+setBatchMode(true);
+
 openfli(Reference,"Reference");
+openfli(Sample,"Sample");
+
 run("fdFLIM", "image1=Sample boolphimod=false image2=Reference tau_ref=3.83 freq=40");
+setBatchMode("show");
+
 setSlice(3);
 threshold(0.2);
 //saveAs("Tiff", output);
+
 
 // Open both sample and background from a .fli file and subtract background
 function openfli(input,name) {
@@ -29,6 +36,7 @@ function openfli(input,name) {
 }
 
 function threshold(thr) {
+	run("Median...", "radius=2");
 	run("Set Measurements...", "area mean standard min redirect=None decimal=3");
 	List.setMeasurements();
 	setThreshold(List.getValue("Max")*thr,Infinity);
@@ -36,5 +44,11 @@ function threshold(thr) {
 	mask = getTitle;
 	run("32-bit");
 	run("Divide...", "value=255");
+	setThreshold(0.5,1);
+	run("NaN Background");
 	imageCalculator("Multiply 32-bit stack", "Lifetimes","mask");
+	rename("Lifetimes_thresholded");
+	setBatchMode("show");
+	close(mask);
+	close("SUM_Lifetimes");
 }
