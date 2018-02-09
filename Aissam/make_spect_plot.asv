@@ -1,0 +1,2 @@
+if ~exist('spect.m','file'),addpath('..\Spectra');end
+cfpA = spect('..\'
