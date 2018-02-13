@@ -17,11 +17,11 @@ title('absorption')
 hold off
 subplot(1,2,2);
 plot(cfpF,'-b','LineWidth',3);hold on;
+plot(yfpF,'-g','LineWidth',3);
 linelist = [450-25,450+25,525-10,525+10,530-15,530+15];
 for ct = 1:length(linelist)
     plot([linelist(ct),linelist(ct)],[0 1],'k-');
 end
-plot(yfpF,'-g','LineWidth',3);
 axis([400 600 0 1])
 legend('cpf','yfp')
 xlabel('Wavelength(nm)')
