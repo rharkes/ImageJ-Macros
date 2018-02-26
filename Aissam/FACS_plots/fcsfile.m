@@ -10,7 +10,7 @@ classdef fcsfile
         text     %text segment
         NrParam  %nr of parameters
         NrEvent  %nr of events
-        Events   %name of events
+        Params   %name of events
         data     %all data
     end
     
@@ -27,7 +27,7 @@ classdef fcsfile
             [obj.offset,obj.version]=obj.getoffsets(obj.fid);
             fseek(obj.fid,obj.offset(1),-1);
             obj.text=fread(obj.fid,obj.offset(2)-obj.offset(1),'uint8=>char')';
-            [obj.NrParam,obj.NrEvent,obj.Events]=obj.analysetext(obj.text); %could be doing something with this, but data is just 32-bit floats
+            [obj.NrParam,obj.NrEvent,obj.Params]=obj.analysetext(obj.text); %could be doing something with this, but data is just 32-bit floats
             fseek(obj.fid,obj.offset(3),-1);
             obj.data=fread(obj.fid,(obj.offset(4)-obj.offset(3))/4,'*single')';
             obj.data = reshape(obj.data,[obj.NrParam,obj.NrEvent]);
