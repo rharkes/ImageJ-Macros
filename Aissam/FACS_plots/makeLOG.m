@@ -27,14 +27,9 @@ ax.YTickLabel=YTickLabel;
 %make lines
 if L
     %in X
-    base10=10.^floor(XTick(1));
-    start = ceil(10.^XTick(1) / base10)*base10;
-    hold on
-    go=1;
-    while go
-        plot([start,start],[YTick(1) YTick(end)],'-w')
-        go=0;
-    end
+    start = XTick(1);
+    stop = XTick(end);
+    
     
     
     
