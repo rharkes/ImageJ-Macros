@@ -44,27 +44,27 @@ function processFile(input, output, file) {
         width = getWidth;
         height = getHeight;
         if (i==0) {
-        	outputcsv = "[" + output + File.separator + substring(file,0, lengthOf(file)-lengthOf(suffix)) + "L.csv"+"]" ;
+        	outputcsv = "[" + output + File.separator + substring(file,0, lengthOf(file)-lengthOf(suffix)) + "_L.csv"+"]" ;
         	outputtiff = output+File.separator+substring(file,0, lengthOf(file)-lengthOf(suffix)) + "L.tif";
     	    makeRectangle(0, 0, width/2, height);
         }
         if (i==1) {
-        	outputcsv = "[" + output + File.separator + substring(file,0, lengthOf(file)-lengthOf(suffix)) + "R.csv"+"]" ;
-        	outputtiff = output+File.separator+substring(file,0, lengthOf(file)-lengthOf(suffix)) + "R.tif";
+        	outputcsv = "[" + output + File.separator + substring(file,0, lengthOf(file)-lengthOf(suffix)) + "_R.csv"+"]" ;
+        	outputtiff = output+File.separator+substring(file,0, lengthOf(file)-lengthOf(suffix)) + "_R.tif";
     	    makeRectangle(width/2, 0, width/2, height);
         }
-    }
-    run("Crop");
-    print("Thunderstorm Result in: " + outputcsv);
+        run("Crop");
+        print("Thunderstorm Result in: " + outputcsv);
     
-    //Background Subtraction
-    if (Bool_TempMed){
-        run("Temporal Median Background Subtraction", "window=501 offset=1000");
-    }
+        //Background Subtraction
+        if (Bool_TempMed){
+            run("Temporal Median Background Subtraction", "window=501 offset=1000");
+        }
 
-    //Thunderstorm
-    run("Run analysis", "filter=[Wavelet filter (B-Spline)] scale=2.0 order=3 detector=[Local maximum] connectivity=8-neighbourhood threshold=std(Wave.F1) estimator=[PSF: Integrated Gaussian] sigma=1.2 fitradius=3 method=[Maximum likelihood] full_image_fitting=false mfaenabled=false renderer=[Averaged shifted histograms] magnification=10.0 colorize=false threed=false shifts=2 repaint=50");
-    run("Export results", "floatprecision=5 filepath="+ outputcsv + " fileformat=[CSV (comma separated)] sigma=true intensity=true offset=true saveprotocol=false x=true y=true bkgstd=true id=false uncertainty_xy=true frame=true");
+        //Thunderstorm
+        run("Run analysis", "filter=[Wavelet filter (B-Spline)] scale=2.0 order=3 detector=[Local maximum] connectivity=8-neighbourhood threshold=std(Wave.F1) estimator=[PSF: Integrated Gaussian] sigma=1.2 fitradius=3 method=[Maximum likelihood] full_image_fitting=false mfaenabled=false renderer=[Averaged shifted histograms] magnification=10.0 colorize=false threed=false shifts=2 repaint=50");
+        run("Export results", "floatprecision=5 filepath="+ outputcsv + " fileformat=[CSV (comma separated)] sigma=true intensity=true offset=true saveprotocol=false x=true y=true bkgstd=true id=false uncertainty_xy=true frame=true");
     
-    saveAs("Tiff", outputtiff);
+        saveAs("Tiff", outputtiff);
+    }
  }
