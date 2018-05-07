@@ -12,24 +12,18 @@ classdef spect
             if ~exist(filename,'file'),error('file does not exist');end
             obj.filename=filename;
             fid=fopen(filename,'r');
-            l = fgetl(fid); %read header
+            l = fgetl(fid);
             obj.header = strsplit(l,',');
             if isempty(obj.header{end}),obj.header(end)=[];end
-            l = fgetl(fid); %read data
+            l = fgetl(fid);
             while ~isnumeric(l)
-                d = strsplit(l,',','CollapseDelimiters',false);
-                d = d(1:length(obj.header));
-                obj.data(end+1,:)=str2double(d);
+                obj.data(end+1,:)=str2double(strsplit(l,','));
                 l = fgetl(fid);
             end
             fclose(fid);
         end
         function plot(obj,varargin)
-            f=figure(1);clf;hold on;
-            for ct = 2:length(obj.header)
-                plot(obj.data(:,1),obj.data(:,ct),varargin{:})
-            end
-            legend(obj.header{end:-1:2});
+            plot(obj.data(:,1),obj.data(:,2),varargin{:})
         end
         
     end
