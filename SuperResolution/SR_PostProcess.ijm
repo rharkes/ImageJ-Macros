@@ -6,10 +6,13 @@
 
 
 /*
- * Macro template to process multiple GSDIM .lif images in a folder
+ * Macro template to process multiple images in a folder
  * By R.Harkes & L.Nahidi (c) GPLv3 2018
  * 10-01-2018
- * Version 1.0
+ * Version 1.1
+ * 
+ * Changelog
+ * 1.1: weighted least squares (and some other updates)
  */
 
 // See also Process_Folder.py for a version of this code
@@ -19,7 +22,7 @@ processFolder(input);
 // function to scan folders/subfolders/files to find files with correct suffix
 function processFolder(input) {
 	list = getFileList(input);
-	list = Array.sort(list)
+	list = Array.sort(list);
 	for (i = 0; i < list.length; i++) {
 		if(File.isDirectory(input + File.separator + list[i]))
 			processFolder(input + File.separator + list[i]);
@@ -47,7 +50,7 @@ function processFile(input, output, file) {
 	}
 	
 	//Thunderstorm
-	run("Run analysis", "filter=[Wavelet filter (B-Spline)] scale=2.0 order=3 detector=[Local maximum] connectivity=8-neighbourhood threshold=std(Wave.F1) estimator=[PSF: Integrated Gaussian] sigma=1.2 fitradius=3 method=[Maximum likelihood] full_image_fitting=false mfaenabled=false renderer=[Averaged shifted histograms] magnification=10.0 colorize=false threed=false shifts=2 repaint=50");
+	run("Run analysis", "filter=[Wavelet filter (B-Spline)] scale=2.0 order=3 detector=[Local maximum] connectivity=8-neighbourhood threshold=2*std(Wave.F1) estimator=[PSF: Integrated Gaussian] sigma=1.2 fitradius=5 method=[Weighted Least squares] full_image_fitting=false mfaenabled=false renderer=[Averaged shifted histograms] magnification=10.0 colorize=false threed=false shifts=2 repaint=50");
 	run("Export results", "floatprecision=5 filepath="+ outputcsv + " fileformat=[CSV (comma separated)] sigma=true intensity=true offset=true saveprotocol=false x=true y=true bkgstd=true id=false uncertainty_xy=true frame=true");
 	outputtiff = output+File.separator+substring(file,0, lengthOf(file)-lengthOf(suffix)) + ".tif";
 	saveAs("Tiff", outputtiff);
