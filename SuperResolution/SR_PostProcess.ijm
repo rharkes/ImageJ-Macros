@@ -19,8 +19,10 @@
  */
 
 photons2adu = 11.71;	//Gain conversion factor of the camera
-EM_gain=100;
-pixel_size=80;
+//These two values will be overwritten if the correct value is found in the .lif file
+default_EM_gain=100; 
+default_pixel_size=100; 
+//
 affine_transform_532 = "1.0033870151680693,-3.232761431019966E-4;-3.546907027046711E-4,1.0033518533347512;-26.264283627718463,26.67252580616556";
 afiine_transform_488 = "1.005381067386475,-1.0666336802334096E-4;-1.0377579033836729E-4,1.0055092526105494;-41.440599081325374,38.65346005022278";
 print("---AUTOMATIC THUNDERSTORM---")
@@ -68,14 +70,16 @@ function processFile(input, output, file) {
 			print("Thunderstorm Result in: " + outputcsv);
 			run("Close All");
 			run("Bio-Formats Importer", "open=[" + inputfile + "] autoscale color_mode=Default view=Hyperstack stack_order=XYCZT series_"+n+1);
+			
+			EM_gain = default_EM_gain;
+			getPixelSize(unit,pixel_size,pixel_size);
+			if(unit=="microns"||unit=="micron"||unit=="um"){
+				pixel_size = pixel_size*1000;	//set pixel size in nm
+			}else if(unit=="pixels") {
+				print("Warning: pixel size not found. Assuming 100nm/pixel.");
+				pixel_size = default_pixel_size;
+			}
 			if (endsWith(suffix,"lif")){  //Get info from metadata of the .lif file
-				getPixelSize(unit,pixel_size,pixel_size);
-				if(unit=="microns"||unit=="micron"||unit=="um"){
-					pixel_size = pixel_size*1000;	//set pixel size in nm
-				}else if(unit=="pixels") {
-					print("Warning: pixel size not found. Assuming 100nm/pixel.");
-					pixe_size = 100;
-				}
 				Ext.getSeriesMetadataValue("Image|ATLCameraSettingDefinition|WideFieldChannelConfigurator|WideFieldChannelInfo|FluoCubeName",wavelength); //get wavelength
 				if(Bool_ChromCorr&&wavelength!=0) {
 					print("Wavelength found in metadata: "+wavelength+" nm");
