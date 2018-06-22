@@ -1,9 +1,9 @@
-// @File(label = "Input directory", style = "directory") input
-// @File(label = "Output directory", style = "directory") output
-// @String(label = "File suffix", value = ".lif") suffix
-// @Boolean(label = "Temporal Median Subtraction", value=true) Bool_TempMed
-// @Boolean(label = "Chromatic Abberation Correction", value=true) Bool_ChromCorr
-// @String(label = "Filtering String", value = "intensity>500 & sigma>10 & uncertainty<50") filtering_string
+@File(label = "Input directory", style = "directory") input
+@File(label = "Output directory", style = "directory") output
+@String(label = "File suffix", value = ".lif") suffix
+@Boolean(label = "Temporal Median Subtraction", value=true) Bool_TempMed
+@Boolean(label = "Chromatic Abberation Correction", value=true) Bool_ChromCorr
+@String(label = "Filtering String", value = "intensity>500 & sigma>70 & uncertainty_xy<50") filtering_string
 
 
 /*
