@@ -8,7 +8,7 @@
 
 /*
  * Macro template to process multiple images in a folder
- * By R.Harkes & L.Nahidi (c) GPLv3 2018
+ * By B.van den Broek, R.Harkes & L.Nahidi
  * 19-06-2018
  * Version 1.2
  * 
