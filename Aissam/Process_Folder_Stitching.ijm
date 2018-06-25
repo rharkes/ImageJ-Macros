@@ -1,7 +1,9 @@
-// @File(label = "Input directory", style = "directory") input
-// @File(label = "Output directory", style = "directory") output
-// @String(label = "File suffix", value = ".tif") suffix
-// @String(label = "Minimum size", value = "400") minsize
+@File(label = "Input directory", style = "directory") input
+@File(label = "Output directory", style = "directory") output
+@String(label = "File suffix", value = ".tif") suffix
+@String(label = "Minimum size", value = "400") minsize
+
+
 // Developed by: Aissam el Khamsi, Kees jalink, Rolf Harkes, Bram van den Broek
 // Year: 2018-06-08
 
