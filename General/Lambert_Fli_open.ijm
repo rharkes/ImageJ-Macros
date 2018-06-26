@@ -2,6 +2,12 @@
 @Float(label = "Frequency", style = "spinner", value=40) freq
 @File(label = "Reference File", style = "file") Reference
 @Float(label = "Reference lifetime", style = "spinner", value=5.4) tau
+
+/*
+ * Macro to calculate lifetime from .fli file
+ * Uses fdFLIM plugin. Download at https://github.com/rharkes/fdFLIM/releases
+ */
+
 run("Close All");
 OpenFile(Reference)
 ref = getTitle();
@@ -18,8 +24,8 @@ run("32-bit");
 changeValues(0,0,NaN);
 imageCalculator("Multiply 32-bit stack", "Lifetimes","mask");
 close("mask");
-Stack.setChannel(1);run("Rainbow RGB");run("Enhance Contrast", "saturated=0.35");
-Stack.setChannel(2);run("Rainbow RGB");run("Enhance Contrast", "saturated=0.35");
+Stack.setChannel(1);run("Royal");run("Enhance Contrast", "saturated=0.35");
+Stack.setChannel(2);run("Royal");run("Enhance Contrast", "saturated=0.35");
 Stack.setChannel(3);run("Grays");run("Enhance Contrast", "saturated=0.35");
 
 
