@@ -21,7 +21,8 @@ class TextPanel extends JPanel {
 			Font fi = new Font("SansSerif", Font.BOLD + Font.ITALIC, 14)
 			FontMetrics fm = g.getFontMetrics(f)
 			FontMetrics fim = g.getFontMetrics(fi)
-			int cx = 75 int cy = 100
+			int cx = 75 
+			int cy = 100
 			g.setFont(f)
 			g.drawString("Hello, ", cx, cy)
 			cx += fm.stringWidth("Hello, ")
@@ -35,46 +36,58 @@ class TextPanel extends JPanel {
 *************************************************************/
 class ButtonPanel extends JPanel implements ActionListener {
 	// members:
-	private JButton redButton
-	private JButton blueButton
+	private JButton GOGO
+	private JButton AddExtra
+	private JButton RemExtra
 	private TextPanel TP //we want to access the text-panel from the button-panel
 	// constructors:
 	public void actionPerformed(ActionEvent e){ //when a registered button is pressed
 		String com = e.getActionCommand()
 		Component[] C = TP.getComponents()
 		switch (com) {
-			case "RED":
-				print "You clicked the "+com+" button!\n"
+			case "Add Button":
+				print "You clicked the "+com+" !\n"
 				if (C.length==0){
 					JButton extraButton = new JButton("Extra")
 					TP.add(extraButton)
 				}else {
 					C[0].setVisible(true)
 				}
+				repaint()
+				revalidate()
 				break
-			case "BLUE":
-				print "You clicked the "+com+" button!!\n"
+			case "Remove Button":
+				print "You clicked the "+com+" !!\n"
 				if (C.length>0){
 					C[0].setVisible(false)
+					repaint()
+					revalidate()
 				}
 				break
+			case "Go and Do":
+				print "Executing a lot of code now"
+				print ".........."
+				print ".........."
+				print "Finished!!!"
+				break
 		}
-		repaint()
-		revalidate()
 	}
 	public ButtonPanel(TextPanel TP) {
 		this.TP = TP
 		// create buttons
-		redButton = new JButton("RED")
-		blueButton = new JButton("BLUE")
+		GOGO     = new JButton("Go and Do")
+		AddExtra = new JButton("Add Button")
+		RemExtra = new JButton("Remove Button")
 		
 		// add buttons to current panel
-		add(redButton)  // add button to current panel
-		add(blueButton) // add button to current panel
+		add(GOGO)  // add button to current panel
+		add(AddExtra)  // add button to current panel
+		add(RemExtra) // add button to current panel
 		
 		// register the current panel as listener for the buttons
-		redButton.addActionListener(this)  
-		blueButton.addActionListener(this) 
+		GOGO.addActionListener(this) 
+		AddExtra.addActionListener(this)  
+		RemExtra.addActionListener(this) 
 	} // ButtonPanel constructor
 } // ButtonPanel class
 
