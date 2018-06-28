@@ -12,6 +12,21 @@ public static void main(String[] args) {
 }
 
 /*************************************************************
+*	Collection of Functions that can be used in this macro 
+*************************************************************/
+class FunctionCollection {
+	public static void TheMainProgram(boolean buttonpresent) {
+		print "excecuting\n"
+		if (buttonpresent){
+			print "We can do anything! There is an extra button present!\n"
+		}else {
+			print "But how? With no extra button?\n"
+		}		
+	}
+	public void Functioncollection(){
+	}
+}
+/*************************************************************
 *	TextPanel Class
 *************************************************************/
 class TextPanel extends JPanel {
@@ -65,10 +80,8 @@ class ButtonPanel extends JPanel implements ActionListener {
 				}
 				break
 			case "Go and Do":
-				print "Executing a lot of code now"
-				print ".........."
-				print ".........."
-				print "Finished!!!"
+				FunctionCollection FC = new FunctionCollection()
+				FC.TheMainProgram(C.length>0&&C[0].isVisible()) //test if there is a button, if there is, check if it is visible
 				break
 		}
 	}
