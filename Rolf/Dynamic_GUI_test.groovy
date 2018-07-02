@@ -21,7 +21,7 @@ class FunctionCollection {
 			print "We can do anything! There is an extra button present!\n"
 		}else {
 			print "But how? With no extra button?\n"
-		}		
+		}
 	}
 	public void Functioncollection(){
 	}
@@ -29,7 +29,7 @@ class FunctionCollection {
 /*************************************************************
 *	TextPanel Class
 *************************************************************/
-class TextPanel extends JPanel {
+class TextPanel extends JPanel { //Very simple, just text. The ButtonPanel gets a reference to this.
 	public void paintComponent(Graphics g) {
 			super.paintComponent(g)
 			Font f = new Font("SansSerif", Font.BOLD, 14)
@@ -85,7 +85,7 @@ class ButtonPanel extends JPanel implements ActionListener {
 				break
 		}
 	}
-	public ButtonPanel(TextPanel TP) {
+	public ButtonPanel(TextPanel TP) { //creator function
 		this.TP = TP
 		// create buttons
 		GOGO     = new JButton("Go and Do")
