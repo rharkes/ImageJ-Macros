@@ -1,3 +1,11 @@
+/*************************************************************
+*	Super Resolution PostProcessing Macro
+*
+*	Version 0.1 (just a GUI)
+*
+*
+*************************************************************/
+
 import java.awt.*
 import java.awt.event.*
 import javax.swing.*
@@ -15,11 +23,32 @@ public static void main(String[] args) {
 *	All functions that can be executed (the actuall macro-part of this macro)
 *************************************************************/
 class FunctionCollection {
-	public static void TheMainProgram(TextPanel TP) { //not pretty, but let's just parse the whole textpanel (a good programmer would make a class that checks the input and returns the proper values etc.)
+	public static void TheMainProgram(GUI_Settings Settings) { 
 		print "---AUTOMATIC THUNDERSTORM---\n"
 		
 	}
 	public void Functioncollection(){
+	}
+}
+
+class GUI_Settings { //check the settings in the textplanel and store them
+	public File input
+	public File output
+	public String suffix
+	public Boolean TM_Bool //temporal median
+	public Long TM_WindowSize
+	public Long TM_Offset
+	public Boolean CC_Bool //chromatic aberation correction
+	public String filtering_string
+
+	public GUI_settings(TextPanel TP){
+		
+	}
+	public GUI_settings(File file){
+		
+	}
+	public Save_GUI_settings(File file){
+		
 	}
 }
 
@@ -55,6 +84,24 @@ class TextPanel extends JPanel  implements ActionListener { //The ButtonPanel ge
 				return
 		}
 			
+	}
+	public loadsettings(){
+		filechooser = new JFileChooser()
+		filechooser.showSaveDialog(null)
+		File file = filechooser.getSelectedFile()
+		GUI_Settings G = GUI_settings(file)
+		
+	}
+	public savesettings(){
+	}
+	public reset(){
+		FilePath = null
+		OpenFileBtn.setText("Choose Path")
+		MedSubstr_CB.setSelected(true)
+		MedSubstr_Offs.setVisible(true)
+		MedSubstr_Wind.setVisible(true)
+		MedSubstr_Offs.setValue(1000)
+		MedSubstr_Wind.setValue(501)
 	}
 	public TextPanel(){
 		setLayout(new BoxLayout(this, BoxLayout.Y_AXIS))
@@ -110,6 +157,8 @@ class ButtonPanel extends JPanel implements ActionListener {
 	// members:
 	private JButton StartButton
 	private JButton ResetButton
+	private JButton LoadSButton
+	private JButton SaveSButton
 	private TextPanel TP //we want to access the text-panel from the button-panel to send it to the FunctionCollection
 	// constructors:
 	public void actionPerformed(ActionEvent e){ //when a registered button is pressed
@@ -118,26 +167,39 @@ class ButtonPanel extends JPanel implements ActionListener {
 		switch (com) {
 			case "Start":
 				FunctionCollection FC = new FunctionCollection()
-				FC.TheMainProgram(TP) 
+				FC.TheMainProgram(GUI_settings(TP)) 
 				break
 			case "Reset":
-				print "You clicked the reset button\n"
+				TP.reset()
+				break
+			case "Load Settings":
+				TP.loadsettings()
+				break
+			case "Save Settings":
+				TP.savesettings()
 				break
 		}
 	}
 	public ButtonPanel(TextPanel TP) { //creator function
 		this.TP = TP
+		setLayout(new BoxLayout(this, BoxLayout.X_AXIS))
 		// create buttons
 		StartButton = new JButton("Start")
 		ResetButton = new JButton("Reset")
+		LoadSButton = new JButton("Load Settings")
+		SaveSButton = new JButton("Save Settings")
 		
 		// add buttons to current panel
 		add(StartButton)
 		add(ResetButton)
+		add(LoadSButton)
+		add(SaveSButton)
 		
 		// register the current panel as listener for the buttons
 		StartButton.addActionListener(this)
 		ResetButton.addActionListener(this)
+		LoadSButton.addActionListener(this)
+		SaveSButton.addActionListener(this)
 	} // ButtonPanel constructor
 } // ButtonPanel class
 
