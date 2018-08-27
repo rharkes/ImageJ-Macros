@@ -3,6 +3,7 @@
 @String(label = "File suffix", value = ".lif") suffix
 @Boolean(label = "Temporal Median Subtraction", value=true) Bool_TempMed
 @Boolean(label = "Chromatic Abberation Correction", value=true) Bool_ChromCorr
+@Boolean(label = "Automatic Merging", value=true) Bool_AutoMerge
 @String(label = "Filtering String", value = "intensity>500 & sigma>70 & uncertainty_xy<50") filtering_string
 
 
@@ -10,13 +11,14 @@
  * Macro template to process multiple images in a folder
  * By B.van den Broek, R.Harkes & L.Nahidi
  * 23-08-2018
- * Version 1.3
+ * Version 1.31
  * 
  * Changelog
  * 1.1: weighted least squares, threshold to 2*std(Wave.F1)
  * 1.2: error at square brackets, restructure for multi-image .lif, automatic wavelength detection from .lif files
  *      optional chromatic abberation correction enables automatic detection of wavelenth and corresponding affine transformation
- * 1.3: Save Settings to .txt file    
+ * 1.3: Save Settings to .JSON file    
+ * 1.31: Added automatic merging
  */
 Version = 1.3;
 photons2adu = 11.71;	//Gain conversion factor of the camera
@@ -131,15 +133,23 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 	ts_shifts = 2;
 	ts_repaint = 50;
 	ts_floatprecision = 5;
-	run("Run analysis", "filter=["+ts_filter+"] scale="+ts_scale+" order="+ts_order+" detector=["+ts_detector+"] connectivity="+ts_connectivity+" threshold="+ts_threshold+
-	  " estimator=["+ts_estimator+"] sigma="+ts_sigma+" fitradius="+ts_fitradius+" method=["+ts_method+"] full_image_fitting="+ts_full_image_fitting+" mfaenabled="+ts_mfaenabled+
+	run("Run analysis", "filter=["+ts_filter+"] scale="+ts_scale+" order="+ts_order+" detector=["+ts_detector+"] connectivity=["+ts_connectivity+"] threshold=["+ts_threshold+
+	  "] estimator=["+ts_estimator+"] sigma="+ts_sigma+" fitradius="+ts_fitradius+" method=["+ts_method+"] full_image_fitting="+ts_full_image_fitting+" mfaenabled="+ts_mfaenabled+
 	  " renderer=["+ts_renderer+"] magnification="+ts_magnification+" colorize="+ts_colorize+" threed="+ts_threed+" shifts="+ts_shifts+" repaint="+ts_repaint);
 	run("Export results", "floatprecision="+ts_floatprecision+" filepath=["+ outputcsv + "] fileformat=[CSV (comma separated)] sigma=true intensity=true offset=true saveprotocol=false x=true y=true bkgstd=true id=true uncertainty_xy=true frame=true");
+
+	//Automatic Merging
+	AutoMerge_ZCoordWeight=0.1;
+	AutoMerge_OffFrame=1;
+	AutoMerge_Dist=20;
+	AutoMerge_FramesPerMolecule=0;
+	if (Bool_AutoMerge) {
+		run("Show results table", "action=merge zcoordweight="+AutoMerge_ZCoordWeight+" offframes="+AutoMerge_OffFrame+" dist="+AutoMerge_Dist+" framespermolecule="+AutoMerge_FramesPerMolecule);
+	}
 	
     //Filtering
 	if (filtering_string != "") {
-		filtering_command = "run(\"Show results table\", \"action=filter formula=[" + filtering_string + "]\")";
-		eval(filtering_command);
+		run("Show results table", "action=filter formula=[" + filtering_string + "]");
 	}
 	saveAs("Tiff", outputtiff);
 
@@ -227,6 +237,13 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 	print(f, "  \"Filtering\" :{");
 	print(f, "    \"Filtering string\" : \""+filtering_string+"\"");
 	print(f, "   },");
+	print(f, "  \"Automatic Merging\" :{");
+	print(f, "    \"Applied\" : "+makeBool(Bool_AutoMerge)+",");
+	print(f, "    \"Z coordinate weight\" : "+AutoMerge_ZCoordWeight+",");
+	print(f, "    \"Maximum off frames\" : "+AutoMerge_OffFrame+",");
+	print(f, "    \"Maximum distance\" : "+AutoMerge_Dist+",");
+	print(f, "    \"Maximum frames per molecule\" : "+AutoMerge_FramesPerMolecule);
+	print(f, "   },");
 	print(f, "  \"Chromatic Abberation Correction\" :{");
 	print(f, "    \"Requested\" : "+makeBool(Bool_ChromCorr)+",");
 	print(f, "    \"Applied\" : "+makeBool((affine!=""))+",");
@@ -235,7 +252,7 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 	print(f, "   }");
 	print(f, "}}");
 	File.close(f)
-}
+}	
 
 function makeBool(in) {
 	if(in){
