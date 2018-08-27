@@ -231,11 +231,12 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 	print(f, "    \"Requested\" : "+makeBool(Bool_ChromCorr)+",");
 	print(f, "    \"Applied\" : "+makeBool((affine!=""))+",");
 	print(f, "    \"Wavelength\" : "+ wavelength+",");
-	print(f, "    \"Applied Affine Transform\" : \""+affine+"\"");
+	print(f, "    \"Applied Affine Transform\" : ["+replace(affine, ";", ",")+"]");
 	print(f, "   }");
 	print(f, "}}");
 	File.close(f)
 }
+
 function makeBool(in) {
 	if(in){
 		in="true";
