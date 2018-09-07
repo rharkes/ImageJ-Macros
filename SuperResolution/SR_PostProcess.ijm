@@ -11,7 +11,11 @@
  * Macro template to process multiple images in a folder
  * By B.van den Broek, R.Harkes & L.Nahidi
  * 23-08-2018
+<<<<<<< HEAD
+ * Version 1.32
+=======
  * Version 1.31
+>>>>>>> origin/master
  * 
  * Changelog
  * 1.1: weighted least squares, threshold to 2*std(Wave.F1)
@@ -19,6 +23,10 @@
  *      optional chromatic abberation correction enables automatic detection of wavelenth and corresponding affine transformation
  * 1.3: Save Settings to .JSON file    
  * 1.31: Added automatic merging
+<<<<<<< HEAD
+ * 1.32: Fixed a bug concerning chromatic aberration (crash ifit was not applied)
+=======
+>>>>>>> origin/master
  */
 Version = 1.3;
 photons2adu = 11.71;	//Gain conversion factor of the camera
@@ -133,6 +141,10 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 	ts_shifts = 2;
 	ts_repaint = 50;
 	ts_floatprecision = 5;
+<<<<<<< HEAD
+	affine = "";
+=======
+>>>>>>> origin/master
 	run("Run analysis", "filter=["+ts_filter+"] scale="+ts_scale+" order="+ts_order+" detector=["+ts_detector+"] connectivity=["+ts_connectivity+"] threshold=["+ts_threshold+
 	  "] estimator=["+ts_estimator+"] sigma="+ts_sigma+" fitradius="+ts_fitradius+" method=["+ts_method+"] full_image_fitting="+ts_full_image_fitting+" mfaenabled="+ts_mfaenabled+
 	  " renderer=["+ts_renderer+"] magnification="+ts_magnification+" colorize="+ts_colorize+" threed="+ts_threed+" shifts="+ts_shifts+" repaint="+ts_repaint);
@@ -278,4 +290,8 @@ function getDateTime() {
      if (second<10) {TimeString = TimeString+"0";}
      TimeString = TimeString+second;
      return TimeString;
+<<<<<<< HEAD
+}
+=======
   }
+>>>>>>> origin/master
