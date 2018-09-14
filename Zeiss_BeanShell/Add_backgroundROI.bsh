@@ -1,0 +1,66 @@
+//add dual roi
+//Beanshell script to add both the selected ROI and the mirror image on the 2nd channel to the ROI manager
+//Even ROIs are red, odd ROIs are green
+
+import ij.IJ;
+import ij.plugin.frame.RoiManager;
+import ij.WindowManager; 
+import ij.ImagePlus;
+import ij.gui.Roi;
+import java.awt.Rectangle;
+import java.awt.Color;
+
+debug = false;
+yshift = 0;
+
+RoiManager rm = RoiManager.getInstance();
+if (rm == null) {
+	if (debug){print("ROI manager was not open");}
+	rm = new RoiManager();
+} else {
+	if (debug){print("ROI manager was open");}
+}
+ImagePlus imp = WindowManager.getCurrentImage();
+dim = imp.getDimensions();
+if (debug){print("image dimensions: ");print( dim);}
+Roi CurROI = imp.getRoi();
+if (CurROI == null) {
+	if (debug){print("no selection");}
+	return;
+}
+if (CurROI.isLine()) {
+	if (debug){print("ROI is line");}
+	return;
+}
+
+for (int i=rm.getCount();i>0;i--){
+	if (debug){print("ROI"+i);}
+	if(rm.getName(i-1).contains("background")){
+		rm.select(i-1);
+		rm.runCommand("Delete");
+	}
+}
+CurROI.setStrokeColor(Color.black);
+Rectangle Rect = CurROI.getBounds();
+if (Rect.getX()<dim[0]/2){
+	if (debug){print("selected on left side");}
+	rm.addRoi(CurROI);
+	CurROI.setLocation(Rect.getX()+dim[0]/2,Rect.getY()+yshift);
+	rm.addRoi(CurROI);
+}else{
+	if (debug){print("selected on right side");}
+	CurROI.setLocation(Rect.getX()-dim[0]/2,Rect.getY()-yshift);
+	rm.addRoi(CurROI);
+	CurROI.setLocation(Rect.getX(),Rect.getY());
+	rm.addRoi(CurROI);
+}
+//rename ROIs
+ROICount = rm.getCount();
+rm.runCommand("Show All");
+IJ.run("Labels...", "color=white font=12 show use draw");
+rm.select(ROICount-2);
+rm.runCommand("Rename","background_left");
+rm.select(ROICount-1);
+rm.runCommand("Rename","background_right");
+rm.deselect();
+rm.runCommand("Sort");

@@ -1,0 +1,9 @@
+import java.text.DecimalFormat;
+//basic examples
+print("test");
+a=12;
+print(a);
+mmc.sleep(10);
+DecimalFormat df = new DecimalFormat( "00000000" );
+
+print(df.format(a))

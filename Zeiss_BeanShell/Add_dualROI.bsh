@@ -1,0 +1,88 @@
+//add dual roi
+//Beanshell script to add both the selected ROI and the mirror image on the 2nd channel to the ROI manager
+//Even ROIs are red, odd ROIs are green
+
+import ij.IJ;
+import ij.plugin.frame.RoiManager;
+import ij.WindowManager; 
+import ij.ImagePlus;
+import ij.gui.Roi;
+import java.awt.Rectangle;
+import java.awt.Color;
+
+debug = false;
+yshift = 0;
+
+// generate color list
+colors = new Color[8];
+colors[0] = Color.red;
+colors[1] = Color.blue;
+colors[2] = Color.green;
+colors[3] = Color.yellow;
+colors[4] = Color.cyan;
+colors[5] = Color.magenta;
+colors[6] = Color.orange;
+colors[7] = Color.pink;
+
+RoiManager rm = RoiManager.getInstance();
+if (rm == null) {
+	if (debug){print("ROI manager was not open");}
+	rm = new RoiManager();
+} else {
+	if (debug){print("ROI manager was open");}
+}
+exist_background=false;
+if (rm.getCount()>1){
+if (rm.getName(rm.getCount()-1).contains("background")){
+	exist_background =true;
+}
+}
+ImagePlus imp = WindowManager.getCurrentImage();
+dim = imp.getDimensions();
+if (debug){print("image dimensions: ");print( dim);}
+Roi CurROI = imp.getRoi();
+if (CurROI == null) {
+	if (debug){print("no selection");}
+	return;
+}
+if (CurROI.isLine()) {
+	if (debug){print("ROI is line");}
+	return;
+}
+ROICount = rm.getCount()/2;
+if(exist_background){
+	CurROI.setStrokeColor(colors[(ROICount-1)%8]);
+}else{
+	CurROI.setStrokeColor(colors[(ROICount)%8]);
+}
+Rectangle Rect = CurROI.getBounds();
+if (Rect.getX()<dim[0]/2){
+	if (debug){print("selected on left side");}
+	rm.addRoi(CurROI);
+	CurROI.setLocation(Rect.getX()+dim[0]/2,Rect.getY()+yshift);
+	rm.addRoi(CurROI);
+}else{
+	if (debug){print("selected on right side");}
+	CurROI.setLocation(Rect.getX()-dim[0]/2,Rect.getY()-yshift);
+	rm.addRoi(CurROI);
+	CurROI.setLocation(Rect.getX(),Rect.getY());
+	rm.addRoi(CurROI);
+}
+//rename ROIs
+DecimalFormat df = new DecimalFormat( "00" );
+rm.runCommand("Show All");
+IJ.run("Labels...", "color=white font=12 show use draw");
+rm.select(ROICount*2);
+if(exist_background){
+	rm.runCommand("Rename",df.format(ROICount)+"_left");
+}else{
+	rm.runCommand("Rename",df.format(ROICount+1)+"_left");
+}
+rm.select(ROICount*2+1);
+if(exist_background){
+	rm.runCommand("Rename",df.format(ROICount)+"_right");
+}else{
+	rm.runCommand("Rename",df.format(ROICount+1)+"_right");
+}
+rm.deselect();
+rm.runCommand("Sort");

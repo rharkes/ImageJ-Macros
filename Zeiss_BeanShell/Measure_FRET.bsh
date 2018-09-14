@@ -1,0 +1,261 @@
+//import imagej
+import ij.IJ;
+import ij.measure.ResultsTable;
+import ij.plugin.frame.RoiManager;
+import ij.WindowManager; 
+import ij.ImagePlus;
+
+//import java chart methods
+import java.awt.Color;
+import java.awt.Shape;
+import java.awt.geom.Ellipse2D;
+import java.awt.geom.Point2D;
+
+import org.jfree.chart.axis.LogAxis;
+import org.jfree.chart.axis.NumberTickUnit;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.chart.plot.XYPlot;
+import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartFrame;
+import org.jfree.chart.ChartPanel;
+import org.jfree.data.xy.XYSeries;
+import org.jfree.data.xy.XYSeriesCollection;
+import org.jfree.util.ShapeUtilities;
+
+debug=true;
+// generate color list
+colors = new Color[8];
+colors[0] = Color.red;
+colors[1] = Color.blue;
+colors[2] = Color.green;
+colors[3] = Color.yellow;
+colors[4] = Color.cyan;
+colors[5] = Color.magenta;
+colors[6] = Color.orange;
+colors[7] = Color.pink;
+
+// get number of ROIs
+IJ.run("Set Measurements...", "mean stack redirect=None decimal=3");
+RoiManager rm = RoiManager.getInstance();
+rm.runCommand("Sort");
+int NROI = rm.getCount();
+exist_background = false;
+if (rm.getName(rm.getCount()-1).contains("background")){
+	NROI=NROI-2; //last two are background
+	exist_background =true;
+}
+if (debug){print("Nr ROIs is "+NROI);}
+
+names = new String[NROI];
+//create graph
+//create collection of series
+dataset_left = new XYSeriesCollection();
+dataset_right = new XYSeriesCollection();
+dataset_ratio = new XYSeriesCollection();
+for (i = 0;i<NROI;i++){
+	//name and add the series
+	names[i]=rm.getName(i);
+	series = new XYSeries(names[i]);
+	if ((i%2)==0){
+		dataset_left.addSeries(series);
+		series = new XYSeries(names[i]);
+		dataset_ratio.addSeries(series);
+	}else{
+		dataset_right.addSeries(series);
+	}
+	
+}
+//Left
+JFreeChart chart_left = ChartFactory.createTimeSeriesChart("Left", // Title
+          "", // x-axis Label
+          "Intensity(ADU)", // y-axis Label
+          dataset_left, // Dataset
+          false, // Show Legend
+          true, // Use tooltips
+          false // Configure chart to generate URLs?
+      );
+XYPlot plot = (XYPlot) chart_left.getPlot();
+plot.setBackgroundPaint(Color.white);
+plot.setRangeGridlinePaint(Color.lightGray);
+XYLineAndShapeRenderer renderer = plot.getRenderer();
+renderer.setBaseShapesVisible(true);
+Shape circle = new Ellipse2D.Float(-2.0f, -2.0f, 4.0f, 4.0f);
+Shape cross = ShapeUtilities.createDiagonalCross(3, 1);
+//plot series in different colors
+for (i=0;i<(NROI/2);i++){
+	renderer.setDrawSeriesLineAsPath(true);
+	if (debug){print("ROI "+i+" has color " + colors[i%8]);}
+   renderer.setSeriesPaint(i, colors[i%8]);
+   renderer.setSeriesLinesVisible(i, true);
+   renderer.setSeriesShape(i, circle, false);
+   renderer.setSeriesFillPaint(i, colors[i%8]);
+}
+renderer.setUseFillPaint(true);
+
+//Right
+JFreeChart chart_right = ChartFactory.createTimeSeriesChart("Right", // Title
+          "", // x-axis Label
+          "Intensity(ADU)", // y-axis Label
+          dataset_right, // Dataset
+          false, // Show Legend
+          true, // Use tooltips
+          false // Configure chart to generate URLs?
+      );
+XYPlot plot = (XYPlot) chart_right.getPlot();
+plot.setBackgroundPaint(Color.white);
+plot.setRangeGridlinePaint(Color.lightGray);
+XYLineAndShapeRenderer renderer = plot.getRenderer();
+renderer.setBaseShapesVisible(true);
+Shape circle = new Ellipse2D.Float(-2.0f, -2.0f, 4.0f, 4.0f);
+Shape cross = ShapeUtilities.createDiagonalCross(3, 1);
+//plot series in different colors
+for (i=0;i<(NROI/2);i++){
+	renderer.setDrawSeriesLineAsPath(true);
+   renderer.setSeriesPaint(i, colors[i%8]);
+   renderer.setSeriesLinesVisible(i, true);
+   renderer.setSeriesShape(i, circle, false);
+   renderer.setSeriesFillPaint(i, colors[i%8]);
+}
+renderer.setUseFillPaint(true);
+
+//Ratio
+JFreeChart chart_ratio = ChartFactory.createTimeSeriesChart("Ratio (L/R)", // Title
+          "Time(s)", // x-axis Label
+          "Left/Right", // y-axis Label
+          dataset_ratio, // Dataset
+          true, // Show Legend
+          true, // Use tooltips
+          false // Configure chart to generate URLs?
+      );
+XYPlot plot = (XYPlot) chart_ratio.getPlot();
+plot.setBackgroundPaint(Color.white);
+plot.setRangeGridlinePaint(Color.lightGray);
+XYLineAndShapeRenderer renderer = plot.getRenderer();
+renderer.setBaseShapesVisible(true);
+Shape circle = new Ellipse2D.Float(-2.0f, -2.0f, 4.0f, 4.0f);
+Shape cross = ShapeUtilities.createDiagonalCross(3, 1);
+//plot series in different colors
+for (i=0;i<(NROI/2);i++){
+	renderer.setDrawSeriesLineAsPath(true);
+   renderer.setSeriesPaint(i, colors[i%8]);
+   renderer.setSeriesLinesVisible(i, true);
+   renderer.setSeriesShape(i, circle, false);
+   renderer.setSeriesFillPaint(i, colors[i%8]);
+}
+renderer.setUseFillPaint(true);
+
+JFrame frame = new JFrame("Chart");
+frame.getContentPane().add(new ChartPanel(chart_left), BorderLayout.NORTH);
+frame.getContentPane().add(new ChartPanel(chart_right), BorderLayout.CENTER);
+frame.getContentPane().add(new ChartPanel(chart_ratio), BorderLayout.SOUTH);
+//graphFrame.getChartPanel().setMouseWheelEnabled(true);
+frame.pack();
+frame.setVisible(true);
+
+// close displays
+disp = mm.displays();
+disp.closeAllDisplayWindows(false);
+rt=ij.measure.ResultsTable.getResultsTable();
+IJ.run("Clear Results", "");
+chart_left.setNotify(false);
+chart_right.setNotify(false);
+chart_ratio.setNotify(false);
+// select all rois
+selectArray = new int[rm.getCount()];
+for (i=0;i<rm.getCount();i++){
+	selectArray[i]=i;
+}
+rm.setSelectedIndexes(selectArray);
+rm.runCommand("Remove Slice Info");
+
+// start acquisition
+nFrames = 0; //image analysed
+long startTime = System.currentTimeMillis();
+long updateTime = 0;
+long elapsedTime = -3600000;
+store = mm.AcquisitionEngine.acquire();
+mmc.sleep(1000);	//Wait a bit to prevent empty first frame
+
+while (mm.AcquisitionEngine.isAcquisitionRunning()){
+	//get image if there is a new one (event manager should be used maybe?)
+	currIm=store.getNumImages();
+	if (currIm>nFrames) {
+		nFrames=currIm;
+		ImagePlus imp = WindowManager.getCurrentImage();
+		if (imp != null) {
+			rm.runCommand("Measure");
+			//get background value
+			background_data= new double[2];
+			if (exist_background){
+				background_data[0]=rt.getValueAsDouble(1,NROI);
+				background_data[1]=rt.getValueAsDouble(1,NROI+1);
+			}
+			for (i=0;i<NROI;i+=2){
+				data_left=rt.getValueAsDouble(1,i);
+				data_right=rt.getValueAsDouble(1,i+1);
+				data_left_bgsubtr = data_left - background_data[0];
+				data_right_bgsubtr = data_right - background_data[1];
+				series_left = dataset_left.getSeries(names[i]);
+				series_right = dataset_right.getSeries(names[i+1]);
+				series_ratio = dataset_ratio.getSeries(names[i]);
+				
+				series_left.add(elapsedTime, data_left_bgsubtr);
+				series_right.add(elapsedTime, data_right_bgsubtr);
+				series_ratio.add(elapsedTime, data_left_bgsubtr/data_right_bgsubtr);
+			}
+			elapsedTime = System.currentTimeMillis()-startTime-3600000;
+			rm.runCommand("Show All");
+			IJ.run("Clear Results", "");
+		}
+		if ((System.currentTimeMillis()-updateTime)>1000){ //update charts
+			updateTime=System.currentTimeMillis();
+			chart_left.setNotify(true);
+			chart_right.setNotify(true);
+			chart_ratio.setNotify(true);
+			chart_left.setNotify(false);
+			chart_right.setNotify(false);
+			chart_ratio.setNotify(false);
+		}
+	} else {
+		mmc.sleep(10);
+	}	
+}
+
+//calculate times
+frameTime = (elapsedTime+3600000)/nFrames;
+
+chart_left.setNotify(true);
+chart_right.setNotify(true);
+chart_ratio.setNotify(true);
+ImagePlus imp = WindowManager.getCurrentImage();
+nFrame = imp.getNFrames();
+ResultsTable rt = new ResultsTable();
+rm.runCommand("Deselect");
+rt = rm.multiMeasure(imp);
+for (i=0;i<nFrame;i++){
+	time = Double.valueOf(i)*Double.valueOf(frameTime)/1000;
+	rt.setValue("time(s)",i,time);
+}
+
+rt.show("Results");
+data_left = new double[NROI][nFrame];
+data_right = new double[NROI][nFrame];
+data_ratio = new double[NROI][nFrame];
+for (i=0;i<NROI;i+=2){
+	series_left = dataset_left.getSeries(names[i]);
+	series_left.clear();
+	series_right = dataset_right.getSeries(names[i+1]);
+	series_right.clear();
+	series_ratio = dataset_ratio.getSeries(names[i]);
+	series_ratio.clear();
+	for (j=0;j<nFrame;j++){
+		data_left[i][j] = rt.getValueAsDouble(i,j) - rt.getValueAsDouble(NROI+(i%2),j);
+		data_right[i][j] = rt.getValueAsDouble(1+i,j) - rt.getValueAsDouble(1+NROI+(i%2),j);
+		data_ratio[i][j] = data_left[i][j]/data_right[i][j];
+		series_left.add((j*frameTime)-3600000, data_left[i][j]);
+		series_right.add((j*frameTime)-3600000, data_right[i][j]);
+		series_ratio.add((j*frameTime)-3600000, data_ratio[i][j]);
+	}
+}

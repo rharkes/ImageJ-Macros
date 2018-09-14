@@ -1,0 +1,109 @@
+//import imagej
+import ij.IJ;
+import ij.measure.ResultsTable;
+import ij.plugin.frame.RoiManager;
+import ij.WindowManager; 
+
+//import java chart methods
+import java.awt.Color;
+import java.awt.Shape;
+import java.awt.geom.Ellipse2D;
+import java.awt.geom.Point2D;
+
+import org.jfree.chart.axis.LogAxis;
+import org.jfree.chart.axis.NumberTickUnit;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.chart.plot.XYPlot;
+import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartFrame;
+import org.jfree.data.xy.XYSeries;
+import org.jfree.data.xy.XYSeriesCollection;
+
+// generate color list
+colors = new Color[10];
+colors[0] = Color.red;
+colors[1] = Color.blue;
+colors[2] = Color.black;
+colors[3] = Color.green;
+colors[4] = Color.yellow;
+colors[5] = Color.red;
+colors[6] = Color.blue;
+colors[7] = Color.black;
+colors[8] = Color.green;
+colors[9] = Color.yellow;
+
+// get number of ROIs
+IJ.run("Set Measurements...", "mean stack redirect=None decimal=3");
+RoiManager rm = RoiManager.getInstance();
+int NROI = rm.getCount();
+
+//create graph
+//create collection of series
+dataset = new XYSeriesCollection();
+for (i = 0;i<NROI;i++){
+	//name and add the series
+	series = new XYSeries(String.valueOf(i+1));
+	dataset.addSeries(series);
+}
+JFreeChart chart = ChartFactory.createScatterPlot("Time Traces", // Title
+          "Time(frames)", // x-axis Label
+          "Intensity(ADU)", // y-axis Label
+          dataset, // Dataset
+          PlotOrientation.VERTICAL, // Plot Orientation
+          true, // Show Legend
+          true, // Use tooltips
+          false // Configure chart to generate URLs?
+      );
+XYPlot plot = (XYPlot) chart.getPlot();
+plot.setBackgroundPaint(Color.white);
+plot.setRangeGridlinePaint(Color.lightGray);
+
+XYLineAndShapeRenderer renderer = (XYLineAndShapeRenderer) plot.getRenderer();
+renderer.setBaseShapesVisible(true);
+Shape circle = new Ellipse2D.Float(-2.0f, -2.0f, 4.0f, 4.0f);
+//plot series in different colors
+for (i=0;i<NROI;i++){
+   renderer.setSeriesPaint(i, colors[i]);
+   renderer.setSeriesFillPaint(i, Color.white);
+   renderer.setSeriesLinesVisible(i, true);
+   renderer.setSeriesShape(i, circle, false);
+}
+renderer.setUseFillPaint(true);
+ChartFrame graphFrame = new ChartFrame("Graph", chart);
+graphFrame.getChartPanel().setMouseWheelEnabled(true);
+graphFrame.pack();
+graphFrame.setVisible(true);
+// close displays
+disp = mm.displays();
+disp.closeAllDisplayWindows(false);
+
+store = mm.AcquisitionEngine.acquire();
+anaIM = 0; //image analysed
+while (mm.AcquisitionEngine.isAcquisitionRunning()){
+	//get image if there is a new one (event manager should be used maybe?)
+	if (store.getNumImages()>anaIM) {
+		anaIM=store.getNumImages();
+		print("new img");
+		ImagePlus imp = WindowManager.getCurrentImage();
+		if (imp == null) {
+			print("no img");
+		} else {
+			NFram = imp.getNFrames();
+			ResultsTable rt = rm.multiMeasure(imp);
+			rt.show("Results");
+			data = new double[NROI][NFram];
+			for (i=0;i<NROI;i++){
+				series = dataset.getSeries(String.valueOf(i+1));
+				series.clear();
+				for (j=0;j<NFram;j++){
+					data[i][j] = rt.getValueAsDouble(i,j);
+					series.add(j+1, data[i][j]);
+				}
+			}	
+		}
+	} else {
+		mmc.sleep(0.01);
+	}	
+}

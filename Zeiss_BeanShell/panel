@@ -1,0 +1,120 @@
+{"panels": [
+  {
+    "cells": [
+      {
+        "rectWidth": 1,
+        "pluginName": "org.micromanager.quickaccess.internal.controls.SnapButton",
+        "rectHeight": 1,
+        "config": {"isBig": {
+          "PropVal": true,
+          "PropType": "Boolean"
+        }},
+        "rectX": 0,
+        "rectY": 1
+      },
+      {
+        "rectWidth": 1,
+        "pluginName": "org.micromanager.quickaccess.internal.controls.ExposureTime",
+        "rectHeight": 1,
+        "config": {},
+        "rectX": 1,
+        "rectY": 0
+      },
+      {
+        "rectWidth": 1,
+        "pluginName": "org.micromanager.quickaccess.internal.controls.CloseAllButton",
+        "rectHeight": 1,
+        "rectX": 0,
+        "rectY": 0
+      },
+      {
+        "rectWidth": 1,
+        "pluginName": "org.micromanager.quickaccess.internal.controls.ScriptButton",
+        "rectHeight": 1,
+        "config": {"scriptPath": {
+          "PropVal": "D:\\Scripts\\ROI Manager.bsh",
+          "PropType": "String"
+        }},
+        "rectX": 1,
+        "rectY": 1
+      },
+      {
+        "rectWidth": 1,
+        "pluginName": "org.micromanager.quickaccess.internal.controls.ScriptButton",
+        "rectHeight": 1,
+        "config": {"scriptPath": {
+          "PropVal": "D:\\Scripts\\Measure.bsh",
+          "PropType": "String"
+        }},
+        "rectX": 2,
+        "rectY": 1
+      },
+      {
+        "rectWidth": 1,
+        "pluginName": "org.micromanager.quickaccess.internal.controls.MDAButtons",
+        "rectHeight": 1,
+        "config": {},
+        "rectX": 2,
+        "rectY": 0
+      }
+    ],
+    "title": "Quick Access Panel",
+    "yPos": 0,
+    "xPos": 604,
+    "dividers": [],
+    "windowHeight": 154,
+    "windowWidth": 368,
+    "openMode": "Never",
+    "numRows": 2,
+    "wasOpen": false,
+    "numCols": 3
+  },
+  {
+    "cells": [
+      {
+        "rectWidth": 1,
+        "pluginName": "org.micromanager.quickaccess.internal.controls.ScriptButton",
+        "rectHeight": 1,
+        "config": {"scriptPath": {
+          "PropVal": "D:\\Scripts\\Measure.bsh",
+          "PropType": "String"
+        }},
+        "rectX": 1,
+        "rectY": 1
+      },
+      {
+        "rectWidth": 1,
+        "pluginName": "org.micromanager.quickaccess.internal.controls.MDAButtons",
+        "rectHeight": 1,
+        "config": {},
+        "rectX": 2,
+        "rectY": 1
+      },
+      {
+        "rectWidth": 1,
+        "pluginName": "org.micromanager.quickaccess.internal.controls.CloseAllButton",
+        "rectHeight": 1,
+        "rectX": 0,
+        "rectY": 2
+      },
+      {
+        "rectWidth": 1,
+        "pluginName": "org.micromanager.quickaccess.internal.controls.ExposureTime",
+        "rectHeight": 1,
+        "config": {},
+        "rectX": 1,
+        "rectY": 0
+      }
+    ],
+    "title": "Quick Access Panel 1",
+    "yPos": 40,
+    "xPos": 730,
+    "dividers": [],
+    "windowHeight": 204,
+    "windowWidth": 368,
+    "openMode": "Never",
+    "numRows": 3,
+    "wasOpen": true,
+    "numCols": 3
+  }
+]}

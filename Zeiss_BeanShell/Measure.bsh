@@ -1,0 +1,158 @@
+filepath="D:\\Data\\";
+
+import ij.*;
+//import java chart methods
+import java.awt.Color;
+import java.awt.Shape;
+import java.awt.geom.Ellipse2D;
+import java.awt.geom.Point2D;
+
+import org.jfree.chart.axis.LogAxis;
+import org.jfree.chart.axis.NumberTickUnit;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.chart.plot.XYPlot;
+import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartFrame;
+import org.jfree.data.xy.XYSeries;
+import org.jfree.data.xy.XYSeriesCollection;
+
+// generate color list
+colors = new Color[10];
+colors[0] = Color.red;
+colors[1] = Color.blue;
+colors[2] = Color.black;
+colors[3] = Color.green;
+colors[4] = Color.yellow;
+colors[5] = Color.red;
+colors[6] = Color.blue;
+colors[7] = Color.black;
+colors[8] = Color.green;
+colors[9] = Color.yellow;
+//end import java chart methods
+
+// find time per image
+FrInt = mm.AcquisitionEngine.getFrameIntervalMs();
+nframes = mm.AcquisitionEngine.getNumFrames();
+
+// get pixels of interest and #pix/ROI (a macro put them in ResultsTable)
+resT = ij.measure.ResultsTable.getResultsTable() ;
+roim = ij.plugin.frame.RoiManager.getInstance() ; 
+pixels = resT.size();
+ROI = new int[3][pixels];
+ROIp = new int[100];
+ROIs = 0;
+for (i=0;i<resT.size();i++){
+	ROI[0][i]=(int) resT.getValueAsDouble(0,i);
+	ROIp[ROI[0][i]]++;
+	if (ROI[0][i]>ROIs){ROIs++;}
+	ROI[1][i]=(int) resT.getValueAsDouble(1,i);
+	ROI[2][i]=(int) resT.getValueAsDouble(2,i);
+}
+ROIs++; //nr of rois (1+)
+
+//remove overhead
+ROIpix = new int[ROIs];
+for (i=0;i<ROIs;i++){
+	ROIpix[i] = ROIp[i];
+}
+
+//create graph
+//create collection of series
+dataset = new XYSeriesCollection();
+for (roi = 0;roi<ROIs;roi++){
+	//name and add the series
+	series = new XYSeries(String.valueOf(roi));
+	dataset.addSeries(series);
+}
+JFreeChart chart = ChartFactory.createScatterPlot("Time Traces", // Title
+          "x", // x-axis Label
+          "y", // y-axis Label
+          dataset, // Dataset
+          PlotOrientation.VERTICAL, // Plot Orientation
+          true, // Show Legend
+          true, // Use tooltips
+          false // Configure chart to generate URLs?
+      );
+XYPlot plot = (XYPlot) chart.getPlot();
+plot.setBackgroundPaint(Color.white);
+plot.setRangeGridlinePaint(Color.lightGray);
+
+XYLineAndShapeRenderer renderer = (XYLineAndShapeRenderer) plot.getRenderer();
+renderer.setBaseShapesVisible(true);
+Shape circle = new Ellipse2D.Float(-2.0f, -2.0f, 4.0f, 4.0f);
+//plot series in different colors
+for (i=0;i<ROIs;i++){
+   renderer.setSeriesPaint(i, colors[i]);
+   renderer.setSeriesFillPaint(i, Color.white);
+   renderer.setSeriesLinesVisible(i, true);
+   renderer.setSeriesShape(i, circle, false);
+}
+renderer.setUseFillPaint(true);
+ChartFrame graphFrame = new ChartFrame("test", chart);
+graphFrame.getChartPanel().setMouseWheelEnabled(true);
+graphFrame.pack();
+graphFrame.setVisible(true);
+//end create graph
+
+// start measuring
+anaIM = 0; //image analysed
+meanROI = new double[ROIs+1][nframes];
+store = mm.AcquisitionEngine.acquire();
+go = true;
+while (go){
+	//get image if there is a new one (event manager should be used maybe?)
+	if (store.getNumImages()>anaIM) {
+		if (anaIM==0){roim.runCommand("Show All");}
+		anaIM = store.getNumImages(); //starts at 1
+		//coordinates to the image
+		coords = mm.data().createCoords("t="+(anaIM-1)+",p=0,c=0,z=0");
+		IM = store.getImage(coords);
+		//clear sumROI variable
+		sumROI = new double[ROIs];
+		for (i=0;i<pixels;i++){
+			sumROI[ROI[0][i]] = sumROI[ROI[0][i]]+IM.getIntensityAt(ROI[1][i],ROI[2][i]);
+		}
+		//store mean and update graph
+		for (i=0;i<ROIs;i++){
+			meanROI[i][anaIM-1] = sumROI[i]/ROIpix[i];
+			series = dataset.getSeries(String.valueOf(i));
+			series.add(anaIM, meanROI[i][anaIM-1]);
+		}		
+	} else {
+		if (!mm.AcquisitionEngine.isAcquisitionRunning()){go=false;}
+		mmc.sleep(FrInt*0.1);
+	}	
+}
+
+//end of measurement, check for missed frames, plot them
+for (fr=0;fr<store.getNumImages();fr++){
+	if (meanROI[0][fr]==0) {
+		coords = mm.data().createCoords("t="+fr+",p=0,c=0,z=0");
+		IM = store.getImage(coords);
+		sumROI = new double[ROIs];
+		for (i=0;i<pixels;i++){
+			sumROI[ROI[0][i]] = sumROI[ROI[0][i]]+IM.getIntensityAt(ROI[1][i],ROI[2][i]);
+		}
+		//store mean and update graph
+		for (i=0;i<ROIs;i++){
+			meanROI[i][fr] = sumROI[i]/ROIpix[i];
+			series = dataset.getSeries(String.valueOf(i));
+			series.add(fr+1, meanROI[i][fr]);
+		}
+	}
+}
+//save data to csv
+date = new Date().getTime();
+builder = new StringBuilder();
+for (fr=0;fr<store.getNumImages();fr++){
+	for (r=0;r<ROIs;r++){
+		builder.append((int)meanROI[r][fr]+"");
+		if(r<(ROIs-1)){builder.append(";");}
+	}
+	builder.append("\n");
+}
+writer = new BufferedWriter(new FileWriter(filepath + date + ".csv"));
+writer.write(builder.toString());
+writer.close();

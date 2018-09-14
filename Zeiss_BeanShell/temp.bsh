@@ -1,0 +1,2 @@
+roim = ij.plugin.frame.RoiManager.getInstance() ; 
+roim.runCommand("Measure");
