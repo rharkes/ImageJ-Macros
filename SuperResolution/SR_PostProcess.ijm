@@ -4,31 +4,28 @@
 @Boolean(label = "Temporal Median Subtraction", value=true) Bool_TempMed
 @Boolean(label = "Chromatic Abberation Correction", value=true) Bool_ChromCorr
 @Boolean(label = "Automatic Merging", value=true) Bool_AutoMerge
-@String(label = "Filtering String", value = "intensity>500 & sigma>70 & uncertainty_xy<50") filtering_string
+@String(label = "Filtering String", value = "intensity>500 & sigma>70 & uncertainty<50") filtering_string
+@String(label="Visualization Method",choices={"Averaged shifted histograms","Scatter plot","Normalized Gaussian","Histograms"}) ts_renderer
 
 
 /*
  * Macro template to process multiple images in a folder
  * By B.van den Broek, R.Harkes & L.Nahidi
- * 23-08-2018
-<<<<<<< HEAD
- * Version 1.32
-=======
- * Version 1.31
->>>>>>> origin/master
+ * 18-09-2018
  * 
  * Changelog
- * 1.1: weighted least squares, threshold to 2*std(Wave.F1)
- * 1.2: error at square brackets, restructure for multi-image .lif, automatic wavelength detection from .lif files
- *      optional chromatic abberation correction enables automatic detection of wavelenth and corresponding affine transformation
- * 1.3: Save Settings to .JSON file    
+ * 1.1:  weighted least squares, threshold to 2*std(Wave.F1)
+ * 1.2:  error at square brackets, restructure for multi-image .lif, automatic wavelength detection from .lif files
+ *       optional chromatic abberation correction enables automatic detection of wavelenth and corresponding affine transformation
+ * 1.3:  Save Settings to .JSON file    
  * 1.31: Added automatic merging
-<<<<<<< HEAD
  * 1.32: Fixed a bug concerning chromatic aberration (crash ifit was not applied)
-=======
->>>>>>> origin/master
+ * 1.4:  Changed default filtering string from uncertainty_xy to uncertainty.
+         Replace / with // in the filepath for JSON output.
+         Add visualization method as option
  */
-Version = 1.3;
+Version = 1.4;
+Bool_debug = false;
 photons2adu = 11.71;	//Gain conversion factor of the camera
 //These two values will be overwritten if the correct value is found in the .lif file
 default_EM_gain=100; 
@@ -134,17 +131,13 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 	ts_method = "Weighted Least squares";
 	ts_full_image_fitting = false;
 	ts_mfaenabled = false;
-	ts_renderer = "Averaged shifted histograms";
 	ts_magnification = 10;
 	ts_colorize = false;
 	ts_threed = false;
 	ts_shifts = 2;
 	ts_repaint = 50;
 	ts_floatprecision = 5;
-<<<<<<< HEAD
 	affine = "";
-=======
->>>>>>> origin/master
 	run("Run analysis", "filter=["+ts_filter+"] scale="+ts_scale+" order="+ts_order+" detector=["+ts_detector+"] connectivity=["+ts_connectivity+"] threshold=["+ts_threshold+
 	  "] estimator=["+ts_estimator+"] sigma="+ts_sigma+" fitradius="+ts_fitradius+" method=["+ts_method+"] full_image_fitting="+ts_full_image_fitting+" mfaenabled="+ts_mfaenabled+
 	  " renderer=["+ts_renderer+"] magnification="+ts_magnification+" colorize="+ts_colorize+" threed="+ts_threed+" shifts="+ts_shifts+" repaint="+ts_repaint);
@@ -194,13 +187,21 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 
 	//save the settings (Trying to stick to JSON for this)
 	jsonfile = substring(outputcsv,0,lengthOf(outputcsv)-4) + "_TS.json";
-	File.delete(jsonfile)
+	File.delete(jsonfile);
 	f = File.open(jsonfile);
+	
 	print(f, "{\"Super Resolution Post Processing Settings\": {");
 	print(f, "  \"Version\" : \""+Version+"\",");
 	print(f, "  \"Date\" : \""+getDateTime()+"\",");
 	print(f, "  \"File\" : \""+file+"\",");
-	print(f, "  \"File Location\" : \""+input+"\",");
+	//replace backslash in filepath.
+	if (File.separator=="\\"){
+		if(Bool_debug){print("replace backslashes");}
+		input2=replace(input,File.separator,"/");
+	}else {
+		input2 = input;
+	}
+	print(f, "  \"File Location\" : \""+input2+"\",");
 	print(f, "  \"Temporal Median Filtering\" : {");
 	print(f, "    \"Applied\" : "+makeBool(Bool_ChromCorr)+",");
 	print(f, "    \"window\" : "+window+",");
@@ -263,7 +264,7 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 	print(f, "    \"Applied Affine Transform\" : ["+replace(affine, ";", ",")+"]");
 	print(f, "   }");
 	print(f, "}}");
-	File.close(f)
+	File.close(f);
 }	
 
 function makeBool(in) {
@@ -290,8 +291,5 @@ function getDateTime() {
      if (second<10) {TimeString = TimeString+"0";}
      TimeString = TimeString+second;
      return TimeString;
-<<<<<<< HEAD
 }
-=======
-  }
->>>>>>> origin/master
+
