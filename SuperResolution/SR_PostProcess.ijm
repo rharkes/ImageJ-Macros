@@ -6,6 +6,7 @@
 @Boolean(label = "Automatic Merging", value=true) Bool_AutoMerge
 @String(label = "Filtering String", value = "intensity>500 & sigma>70 & uncertainty<50") filtering_string
 @String(label="Visualization Method",choices={"Averaged shifted histograms","Scatter plot","Normalized Gaussian","Histograms"}) ts_renderer
+@Boolean(label = "16-bit output", value=false) Bool_16bit
 
 
 /*
@@ -23,8 +24,11 @@
  * 1.4:  Changed default filtering string from uncertainty_xy to uncertainty.
          Replace / with // in the filepath for JSON output.
          Add visualization method as option
+ * 1.41  Option to convert to 16-bit
+ *       Rendering on the same size as the image
+ *       Fixed gaussian width (dx) for normalized gaussian rendering.
  */
-Version = 1.4;
+Version = 1.41;
 Bool_debug = false;
 photons2adu = 11.71;	//Gain conversion factor of the camera
 //These two values will be overwritten if the correct value is found in the .lif file
@@ -104,6 +108,9 @@ function processFile(input, output, file) {
 }
 
 function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
+    //Image Info
+    IMwidth = getWidth;
+  	IMheight = getHeight;
 	//Background Subtraction
 	offset = 1000;
 	window = 501;
@@ -131,6 +138,7 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 	ts_method = "Weighted Least squares";
 	ts_full_image_fitting = false;
 	ts_mfaenabled = false;
+	//ts_renderer = set in GUI
 	ts_magnification = 10;
 	ts_colorize = false;
 	ts_threed = false;
@@ -155,6 +163,18 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
     //Filtering
 	if (filtering_string != "") {
 		run("Show results table", "action=filter formula=[" + filtering_string + "]");
+	}
+
+	//rendering
+	rd_force_dx = true;
+	rd_dx=10;
+	rd_dzforce=false;
+	run("Visualization", "imleft=0.0 imtop=0.0 imwidth="+IMwidth+" imheight="+IMheight+" renderer=["+ts_renderer+"] dxforce="+rd_force_dx+" magnification="+ts_magnification+" colorize="+ts_colorize+" dx="+rd_dx+" threed="+ts_threed+" dzforce="+rd_dzforce);
+	
+	if(Bool_16bit){
+		run("Conversions...", "scale");
+		resetMinAndMax();
+		run("16-bit");
 	}
 	saveAs("Tiff", outputtiff);
 
@@ -181,6 +201,11 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 			run("Import results", "detectmeasurementprotocol=false filepath=["+ outputcsv2 + "] fileformat=[CSV (comma separated)] livepreview=false rawimagestack= startingframe=1 append=false");
 			run("Visualization", "imleft=0.0 imtop=0.0 imwidth=180.0 imheight=180.0 renderer=[Averaged shifted histograms] magnification=10.0 colorize=false threed=false shifts=2 repaint=50");
 			outputtiff2 = substring(outputtiff,0,lengthOf(outputtiff)-4) + "_chromcorr.tif";
+			if(Bool_16bit){
+				run("Conversions...", "scale");
+				resetMinAndMax();
+				run("16-bit");
+			}
 			saveAs("Tiff", outputtiff2);
 		}
 	}
@@ -241,6 +266,9 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 	print(f, "    \"colorize\" : "+makeBool(ts_colorize)+",");
 	print(f, "    \"Three Dimensional\" : "+makeBool(ts_threed)+",");
 	print(f, "    \"Lateral shifts\" : "+ts_shifts+",");
+	print(f, "    \"Force dx\" : "+makeBool(rd_force_dx)+",");
+	print(f, "    \"dx\" : "+rd_dx+",");
+	print(f, "    \"Force dz\" : "+makeBool(rd_dzforce)+",");
 	print(f, "    \"Update Frequency\" : "+ts_repaint);
 	print(f, "   },");
 	print(f, "  \"Output\" : {");
@@ -266,7 +294,9 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 	print(f, "}}");
 	File.close(f);
 }	
-
+	rd_force_dx = true;
+	rd_dx=10;
+	rd_dzforce=false;
 function makeBool(in) {
 	if(in){
 		in="true";
