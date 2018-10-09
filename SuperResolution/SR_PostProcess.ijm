@@ -1,7 +1,8 @@
 @File(label = "Input directory", style = "directory") input
-@File(label = "Output directory", style = "directory") output
 @String(label = "File suffix", value = ".lif") suffix
 @Boolean(label = "Temporal Median Subtraction", value=true) Bool_TempMed
+@File(label = "Output directory", style = "directory") output
+@File(label = "Chromatic aberration directory", style = "directory") jsondir
 @Boolean(label = "Chromatic Abberation Correction", value=true) Bool_ChromCorr
 @Boolean(label = "Automatic Merging", value=true) Bool_AutoMerge
 @String(label = "Filtering String", value = "intensity>500 & sigma>70 & uncertainty<50") filtering_string
@@ -27,6 +28,7 @@
  * 1.41  Option to convert to 16-bit
  *       Rendering on the same size as the image
  *       Fixed gaussian width (dx) for normalized gaussian rendering.
+ * 2.0   Change affine transform to work with .json files
  */
 Version = 1.41;
 Bool_debug = false;
@@ -35,8 +37,8 @@ photons2adu = 11.71;	//Gain conversion factor of the camera
 default_EM_gain=100; 
 default_pixel_size=100; 
 //
-affine_transform_532 = "1.0033870151680693,-3.232761431019966E-4;-3.546907027046711E-4,1.0033518533347512;-26.264283627718463,26.67252580616556";
-affine_transform_488 = "1.005381067386475,-1.0666336802334096E-4;-1.0377579033836729E-4,1.0055092526105494;-41.440599081325374,38.65346005022278";
+affine_transform_532 = jsondir + File.separator + "AffineTransform532.json";
+affine_transform_488 = jsondir + File.separator + "AffineTransform488.json";
 print("---AUTOMATIC THUNDERSTORM---")
 processFolder(input);
 
@@ -197,7 +199,7 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 			run("Close All");
 			outputcsv2 = substring(outputcsv,0,lengthOf(outputcsv)-4) + "_chromcorr.csv";
 			print("Chromatic Abberation corrected result in: " + outputcsv2);
-			run("Do Affine", "csvfile1=["+ outputcsv +"] csvfile2=["+ outputcsv2 + "] affine="+affine);
+			run("Do Affine", "csvfile1=["+ outputcsv +"] csvfile2=["+ outputcsv2 + "] affine_file=["+affine+"]");
 			run("Import results", "detectmeasurementprotocol=false filepath=["+ outputcsv2 + "] fileformat=[CSV (comma separated)] livepreview=false rawimagestack= startingframe=1 append=false");
 			run("Visualization", "imleft=0.0 imtop=0.0 imwidth=180.0 imheight=180.0 renderer=[Averaged shifted histograms] magnification=10.0 colorize=false threed=false shifts=2 repaint=50");
 			outputtiff2 = substring(outputtiff,0,lengthOf(outputtiff)-4) + "_chromcorr.tif";
@@ -223,8 +225,10 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 	if (File.separator=="\\"){
 		if(Bool_debug){print("replace backslashes");}
 		input2=replace(input,File.separator,"/");
+		affine2=replace(affine,File.separator,"/");
 	}else {
 		input2 = input;
+		affine2=affine;
 	}
 	print(f, "  \"File Location\" : \""+input2+"\",");
 	print(f, "  \"Temporal Median Filtering\" : {");
@@ -289,7 +293,7 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 	print(f, "    \"Requested\" : "+makeBool(Bool_ChromCorr)+",");
 	print(f, "    \"Applied\" : "+makeBool((affine!=""))+",");
 	print(f, "    \"Wavelength\" : "+ wavelength+",");
-	print(f, "    \"Applied Affine Transform\" : ["+replace(affine, ";", ",")+"]");
+	print(f, "    \"Applied Affine Transform\" : \"" + affine2+"\"");
 	print(f, "   }");
 	print(f, "}}");
 	File.close(f);
