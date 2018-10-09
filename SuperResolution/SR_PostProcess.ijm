@@ -7,7 +7,8 @@
 @Boolean(label = "Automatic Merging", value=true) Bool_AutoMerge
 @String(label = "Filtering String", value = "intensity>500 & sigma>70 & uncertainty<50") filtering_string
 @String(label="Visualization Method",choices={"Averaged shifted histograms","Scatter plot","Normalized Gaussian","Histograms"}) ts_renderer
-@Boolean(label = "16-bit output", value=false) Bool_16bit
+
+@Boolean(label = "16-bit output", value=false) Bool_16bit
 
 
 /*
@@ -30,7 +31,7 @@
  *       Fixed gaussian width (dx) for normalized gaussian rendering.
  * 2.0   Change affine transform to work with .json files
  */
-Version = 1.41;
+Version = 2.0;
 Bool_debug = false;
 photons2adu = 11.71;	//Gain conversion factor of the camera
 //These two values will be overwritten if the correct value is found in the .lif file
@@ -214,7 +215,8 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 
 	//save the settings (Trying to stick to JSON for this)
 	jsonfile = substring(outputcsv,0,lengthOf(outputcsv)-4) + "_TS.json";
-	File.delete(jsonfile);
+	File.delete(jsonfile)
+;
 	f = File.open(jsonfile);
 	
 	print(f, "{\"Super Resolution Post Processing Settings\": {");
@@ -296,9 +298,11 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 	print(f, "    \"Applied Affine Transform\" : \"" + affine2+"\"");
 	print(f, "   }");
 	print(f, "}}");
-	File.close(f);
+	File.close(f)
+;
 }	
-	rd_force_dx = true;
+
+	rd_force_dx = true;
 	rd_dx=10;
 	rd_dzforce=false;
 function makeBool(in) {
