@@ -1,20 +1,27 @@
 @File(label = "Input directory", style = "directory") input
-@String(label = "File suffix", value = ".lif") suffix
-@Boolean(label = "Temporal Median Subtraction", value=true) Bool_TempMed
 @File(label = "Output directory", style = "directory") output
-@File(label = "Chromatic aberration directory", style = "directory") jsondir
-@Boolean(label = "Chromatic Abberation Correction", value=true) Bool_ChromCorr
-@Boolean(label = "Automatic Merging", value=true) Bool_AutoMerge
-@String(label = "Filtering String", value = "intensity>500 & sigma>70 & uncertainty<50") filtering_string
-@String(label="Visualization Method",choices={"Averaged shifted histograms","Scatter plot","Normalized Gaussian","Histograms"}) ts_renderer
+@String(label = "File suffix", value = ".lif") suffix
+@Boolean(label = "Apply Temporal Median Subtraction", value=true) Bool_TempMed
+@String(label = "Sub-pixel localization method", choices={"PSF: Integrated Gaussian", "PSF: Gaussian", "PSF: Elliptical Gaussian (3D astigmatism)", "Radial symmetry", "Centroid of local neighborhood", "Phasor Fitting", "No estimator"}) ts_estimator
+@String(label = "Fitting method", choices={"Least squares", "Weighted Least squares", "Maximum likelihood"}) ts_method
+@Boolean(label = "Apply Drift Correction", value=true) Bool_DriftCorr
+@Boolean(label = "Apply Chromatic Abberation Correction", value=true) Bool_ChromCorr
+@Integer(label = "Drift correction steps", value=5) ts_drift_steps
+@File(label = "Chromatic aberration directory", style = "directory", value="C:\\Temp", description="The directory where the chromatic aberration JSON files are stored") jsondir
 
-@Boolean(label = "16-bit output", value=false) Bool_16bit
+@Boolean(label = "Merge reappearing molecules", value=true) Bool_AutoMerge
+@String(label = "Filtering String", value = "intensity>500 & sigma>70 & uncertainty<50") filtering_string
+@String(label="Visualization Method",choices={"Averaged shifted histograms","Scatter plot","Normalized Gaussian","Histograms","No Renderer"}) ts_renderer
+
+@Boolean(label = "16-bit output instead of 32-bit", value=false) Bool_16bit
+@Boolean(label = "Display images while processing?", value=false) Bool_display
+
 
 
 /*
  * Macro template to process multiple images in a folder
  * By B.van den Broek, R.Harkes & L.Nahidi
- * 18-09-2018
+ * 30-10-2018
  * 
  * Changelog
  * 1.1:  weighted least squares, threshold to 2*std(Wave.F1)
@@ -30,26 +37,80 @@
  *       Rendering on the same size as the image
  *       Fixed gaussian width (dx) for normalized gaussian rendering.
  * 2.0   Change affine transform to work with .json files
+ * 2.1   Added features to be set in the GUI: fitting method, drift correction, displaying analysis boolean
+ *       Various small improvements
  */
-Version = 2.0;
-Bool_debug = false;
+Version = 2.1;
+
+//VARIABLES
+
+//Camera Setup
 photons2adu = 11.71;	//Gain conversion factor of the camera
-//These two values will be overwritten if the correct value is found in the .lif file
-default_EM_gain=100; 
-default_pixel_size=100; 
-//
+default_EM_gain=100; 	//This values will be overwritten if the correct value is found in the .lif file
+default_pixel_size=100; //This values will be overwritten if the correct value is found in the .lif file
+isemgain=true;			//This values will be overwritten if the correct value is found in the .lif file
+readoutnoise=0;
+quantumefficiency=1;
+
+//Background Subtraction
+offset = 1000;
+window = 501;
+if (Bool_TempMed){
+	run("Temporal Median Background Subtraction", "window="+window+" offset="+offset);
+} else {
+	offset=100;
+}
+
+//Thunderstorm
+ts_filter = "Wavelet filter (B-Spline)";
+ts_scale = 2;
+ts_order = 3;
+ts_detector = "Local maximum";
+ts_connectivity = "8-neighbourhood";
+ts_threshold = "2*std(Wave.F1)";
+//ts_estimator = set in GUI
+ts_sigma = 1.2;
+ts_fitradius = 5;
+//ts_method = set in GUI
+ts_full_image_fitting = false;
+ts_mfaenabled = false;
+//ts_renderer = set in GUI
+ts_magnification = 10;
+ts_colorize = false;
+ts_threed = false;
+ts_shifts = 2;
+ts_repaint = 50;
+ts_floatprecision = 5;
+affine = "";
+ts_drift_magnification = 5;
+//ts_drift_steps = set in GUI
+
+Bool_debug = false;
+
+//Location of the folder containing the JSON chromatic aberration files
 affine_transform_532 = jsondir + File.separator + "AffineTransform532.json";
 affine_transform_488 = jsondir + File.separator + "AffineTransform488.json";
-print("---AUTOMATIC THUNDERSTORM---")
+
+if(!File.exists(output)) {
+	create = getBoolean("The specified output folder "+output+" does not exist. Create?");
+	if(create==true) File.makeDirectory(output);		//create the output folder if it doesn't exist
+	else exit;
+}
+
+print("---AUTOMATIC THUNDERSTORM---");
+if(Bool_display==false) setBatchMode(true);
 processFolder(input);
+if(nImages>0) run("Close All");
+setBatchMode(false);
 
 // function to scan folders/subfolders/files to find files with correct suffix
 function processFolder(input) {
 	list = getFileList(input);
 	list = Array.sort(list);
 	for (i = 0; i < list.length; i++) {
-		if(File.isDirectory(input + File.separator + list[i]))
-			processFolder(input + File.separator + list[i]);
+	input_path = input + File.separator + list[i];
+		if(File.isDirectory(input_path) && (substring(input_path,0,lengthOf(input_path)-1) != output))	//Skip folder if it is the output folder
+			processFolder(input_path);
 		if(endsWith(list[i], suffix))
 			processFile(input, output, list[i]);
 	}
@@ -101,10 +162,13 @@ function processFile(input, output, file) {
 				if(Bool_ChromCorr&&wavelength!=0) {
 					print("Wavelength found in metadata: "+wavelength+" nm");
 				}
+				Ext.getSeriesMetadataValue("Image|ATLCameraSettingDefinition|CanDoEMGain",isemgain); //set to true if the caemra has EM gain
 				Ext.getSeriesMetadataValue("Image|ATLCameraSettingDefinition|EMGainValue",EM_gain); //get EM gain
 			}else if (Bool_ChromCorr){
 				wavelength = substring(file,lengthOf(file) - lengthOf(suffix) - 3, lengthOf(file) - lengthOf(suffix)); //get wavelength from last three characters of the filename
 			}
+			run("Camera setup", "readoutnoise="+readoutnoise+" offset="+offset+" quantumefficiency="+quantumefficiency+" isemgain="+isemgain+" photons2adu="+photons2adu+" gainem="+EM_gain+" pixelsize="+pixel_size);
+
 			processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size);
 		}
 	}	
@@ -114,47 +178,22 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
     //Image Info
     IMwidth = getWidth;
   	IMheight = getHeight;
-	//Background Subtraction
-	offset = 1000;
-	window = 501;
-	if (Bool_TempMed){
-		run("Temporal Median Background Subtraction", "window="+window+" offset="+offset);
-	} else {
-		offset=100;
-	}
-	//Camera Setup
-	readoutnoise=0;
-	quantumefficiency=1;
-	isemgain=true;
-	run("Camera setup", "readoutnoise="+readoutnoise+" offset="+offset+" quantumefficiency="+quantumefficiency+" isemgain="+isemgain+" photons2adu="+photons2adu+" gainem="+EM_gain+" pixelsize="+pixel_size);
 	
-	//Thunderstorm
-	ts_filter = "Wavelet filter (B-Spline)";
-	ts_scale = 2;
-	ts_order = 3;
-	ts_detector = "Local maximum";
-	ts_connectivity = "8-neighbourhood";
-	ts_threshold = "2*std(Wave.F1)";
-	ts_estimator = "PSF: Integrated Gaussian";
-	ts_sigma = 1.2;
-	ts_fitradius = 5;
-	ts_method = "Weighted Least squares";
-	ts_full_image_fitting = false;
-	ts_mfaenabled = false;
-	//ts_renderer = set in GUI
-	ts_magnification = 10;
-	ts_colorize = false;
-	ts_threed = false;
-	ts_shifts = 2;
-	ts_repaint = 50;
-	ts_floatprecision = 5;
-	affine = "";
 	run("Run analysis", "filter=["+ts_filter+"] scale="+ts_scale+" order="+ts_order+" detector=["+ts_detector+"] connectivity=["+ts_connectivity+"] threshold=["+ts_threshold+
 	  "] estimator=["+ts_estimator+"] sigma="+ts_sigma+" fitradius="+ts_fitradius+" method=["+ts_method+"] full_image_fitting="+ts_full_image_fitting+" mfaenabled="+ts_mfaenabled+
 	  " renderer=["+ts_renderer+"] magnification="+ts_magnification+" colorize="+ts_colorize+" threed="+ts_threed+" shifts="+ts_shifts+" repaint="+ts_repaint);
 	run("Export results", "floatprecision="+ts_floatprecision+" filepath=["+ outputcsv + "] fileformat=[CSV (comma separated)] sigma=true intensity=true offset=true saveprotocol=false x=true y=true bkgstd=true id=true uncertainty_xy=true frame=true");
 
-	//Automatic Merging
+	//Drift correction
+	if (Bool_DriftCorr) {
+		run("Show results table", "action=drift magnification="+ts_drift_magnification+" method=[Cross correlation] ccsmoothingbandwidth=0.25 save=false steps="+ts_drift_steps+" showcorrelations=false");
+		selectWindow("Drift");
+		outputtiff_drift = substring(outputtiff,0,lengthOf(outputtiff)-4) + "_drift.tif";
+		saveAs("Tiff", outputtiff_drift);
+		close();
+	}
+
+	//Merge reappearing molecules
 	AutoMerge_ZCoordWeight=0.1;
 	AutoMerge_OffFrame=1;
 	AutoMerge_Dist=20;
@@ -203,13 +242,13 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 			run("Do Affine", "csvfile1=["+ outputcsv +"] csvfile2=["+ outputcsv2 + "] affine_file=["+affine+"]");
 			run("Import results", "detectmeasurementprotocol=false filepath=["+ outputcsv2 + "] fileformat=[CSV (comma separated)] livepreview=false rawimagestack= startingframe=1 append=false");
 			run("Visualization", "imleft=0.0 imtop=0.0 imwidth=180.0 imheight=180.0 renderer=[Averaged shifted histograms] magnification=10.0 colorize=false threed=false shifts=2 repaint=50");
-			outputtiff2 = substring(outputtiff,0,lengthOf(outputtiff)-4) + "_chromcorr.tif";
+			outputtiff_chromcorr = substring(outputtiff,0,lengthOf(outputtiff)-4) + "_chromcorr.tif";
 			if(Bool_16bit){
 				run("Conversions...", "scale");
 				resetMinAndMax();
 				run("16-bit");
 			}
-			saveAs("Tiff", outputtiff2);
+			saveAs("Tiff", outputtiff_chromcorr);
 		}
 	}
 
@@ -281,15 +320,20 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 	print(f, "    \"csv float precision\" : "+ts_floatprecision);
 	print(f, "   }");
 	print(f, "   },");
-	print(f, "  \"Filtering\" :{");
-	print(f, "    \"Filtering string\" : \""+filtering_string+"\"");
+	print(f, "  \"Drift correction\" :{");
+	print(f, "    \"Applied\" : "+makeBool(Bool_DriftCorr)+",");
+	print(f, "    \"Magnification\" : "+ts_drift_magnification+",");
+	print(f, "    \"Steps\" : "+ts_drift_steps+",");
 	print(f, "   },");
-	print(f, "  \"Automatic Merging\" :{");
+	print(f, "  \"Merging of reappearing molecules\" :{");
 	print(f, "    \"Applied\" : "+makeBool(Bool_AutoMerge)+",");
 	print(f, "    \"Z coordinate weight\" : "+AutoMerge_ZCoordWeight+",");
 	print(f, "    \"Maximum off frames\" : "+AutoMerge_OffFrame+",");
 	print(f, "    \"Maximum distance\" : "+AutoMerge_Dist+",");
 	print(f, "    \"Maximum frames per molecule\" : "+AutoMerge_FramesPerMolecule);
+	print(f, "   },");
+	print(f, "  \"Filtering\" :{");
+	print(f, "    \"Filtering string\" : \""+filtering_string+"\"");
 	print(f, "   },");
 	print(f, "  \"Chromatic Abberation Correction\" :{");
 	print(f, "    \"Requested\" : "+makeBool(Bool_ChromCorr)+",");
