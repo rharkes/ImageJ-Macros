@@ -40,8 +40,9 @@
  * 2.1   Added features to be set in the GUI: fitting method, drift correction, displaying analysis boolean
  *       Various small improvements
  * 2.11  wavelength was undefined for .tiff files
+ * 2.12  fixed temporal median background subtraction. (was broken in 2.1 and 2.11)
  */
-Version = 2.11;
+Version = 2.12;
 
 //VARIABLES
 
@@ -54,14 +55,12 @@ readoutnoise=0;
 quantumefficiency=1;
 
 //Background Subtraction
-offset = 1000;
 window = 501;
 if (Bool_TempMed){
-	run("Temporal Median Background Subtraction", "window="+window+" offset="+offset);
+	offset = 1000;
 } else {
 	offset=100;
 }
-
 //Thunderstorm
 ts_filter = "Wavelet filter (B-Spline)";
 ts_scale = 2;
@@ -171,7 +170,9 @@ function processFile(input, output, file) {
 				wavelength = '';
 			}
 			run("Camera setup", "readoutnoise="+readoutnoise+" offset="+offset+" quantumefficiency="+quantumefficiency+" isemgain="+isemgain+" photons2adu="+photons2adu+" gainem="+EM_gain+" pixelsize="+pixel_size);
-
+			if (Bool_TempMed){
+				run("Temporal Median Background Subtraction", "window="+window+" offset="+offset);
+			}
 			processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size);
 		}
 	}	
