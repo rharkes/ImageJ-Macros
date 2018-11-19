@@ -21,7 +21,7 @@
 /*
  * Macro template to process multiple images in a folder
  * By B.van den Broek, R.Harkes & L.Nahidi
- * 30-10-2018
+ * 19-11-2018
  * 
  * Changelog
  * 1.1:  weighted least squares, threshold to 2*std(Wave.F1)
@@ -39,8 +39,9 @@
  * 2.0   Change affine transform to work with .json files
  * 2.1   Added features to be set in the GUI: fitting method, drift correction, displaying analysis boolean
  *       Various small improvements
+ * 2.11  wavelength was undefined for .tiff files
  */
-Version = 2.1;
+Version = 2.11;
 
 //VARIABLES
 
@@ -166,6 +167,8 @@ function processFile(input, output, file) {
 				Ext.getSeriesMetadataValue("Image|ATLCameraSettingDefinition|EMGainValue",EM_gain); //get EM gain
 			}else if (Bool_ChromCorr){
 				wavelength = substring(file,lengthOf(file) - lengthOf(suffix) - 3, lengthOf(file) - lengthOf(suffix)); //get wavelength from last three characters of the filename
+			}else {
+				wavelength = '';
 			}
 			run("Camera setup", "readoutnoise="+readoutnoise+" offset="+offset+" quantumefficiency="+quantumefficiency+" isemgain="+isemgain+" photons2adu="+photons2adu+" gainem="+EM_gain+" pixelsize="+pixel_size);
 
