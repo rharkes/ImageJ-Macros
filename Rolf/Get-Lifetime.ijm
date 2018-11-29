@@ -6,21 +6,38 @@
  * Macro to calculate lifetime from .fli file
  * Uses fdFLIM plugin. Download at https://github.com/rharkes/fdFLIM/releases
  */
-Infinity = 1.0/0.0; 
+ 
+phases = 12;
+tau_ref = 3.93;
+freq = 40;
+
 run("Close All");
-
 setBatchMode(true);
-
 openfli(Reference,"Reference");
 openfli(Sample,"Sample");
-
-run("fdFLIM", "image1=Sample boolphimod=false image2=Reference tau_ref=3.83 freq=40");
+getDimensions(w, h, channels, slices, frames);
+// loop over all frames
+for (i = 0; i < (frames/phases); i++) {
+	selectWindow("Sample");
+	if (i<((frames/phases)-1)){ //last frame
+		run("Make Substack...", "delete slices=1-12");
+	}
+	rename("temp_img");
+	run("fdFLIM", "image1=[temp_img] boolphimod=false image2=Reference tau_ref="+tau_ref+" freq="+freq);	
+	selectWindow("temp_img");
+	close();
+	if (i==0){
+		rename("Lifetimes_final");
+	}else{
+		run("Concatenate...", "  title=Lifetimes_final open image1=Lifetimes_final image2=Lifetimes");
+	}	
+}
+selectWindow("Reference");
+close();
 setBatchMode("show");
-
-setSlice(3);
-threshold(0.2);
-//saveAs("Tiff", output);
-
+setMinAndMax(1, 4);
+run("physics");
+saveAs("Tiff", output);
 
 // Open both sample and background from a .fli file and subtract background
 function openfli(input,name) {
@@ -33,22 +50,4 @@ function openfli(input,name) {
 	imageCalculator("Subtract stack", name,"BG");
 	selectWindow("BG");
 	close();
-}
-
-function threshold(thr) {
-	run("Median...", "radius=2");
-	run("Set Measurements...", "area mean standard min redirect=None decimal=3");
-	List.setMeasurements();
-	setThreshold(List.getValue("Max")*thr,Infinity);
-	run("Create Mask");
-	mask = getTitle;
-	run("32-bit");
-	run("Divide...", "value=255");
-	setThreshold(0.5,1);
-	run("NaN Background");
-	imageCalculator("Multiply 32-bit stack", "Lifetimes","mask");
-	rename("Lifetimes_thresholded");
-	setBatchMode("show");
-	close(mask);
-	close("SUM_Lifetimes");
 }
