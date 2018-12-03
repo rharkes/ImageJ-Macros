@@ -1,6 +1,6 @@
 // @File(label = "Sample File", style = "file") Sample
 // @File(label = "Reference File", style = "file") Reference
-// @File(label = "Output File", style = "File") output
+// @File(label = "Output Directory", style = "directory") output
 
 /*
  * Macro to calculate lifetime from .fli file
@@ -37,7 +37,10 @@ close();
 setBatchMode("show");
 setMinAndMax(1, 4);
 run("physics");
-saveAs("Tiff", output);
+Sample = split(Sample,File.separator);
+Sample = Sample[Sample.length-1];
+print(Sample);
+saveAs("Tiff", output + File.separator + substring(Sample,0, lengthOf(Sample)-3) + "tif");
 
 // Open both sample and background from a .fli file and subtract background
 function openfli(input,name) {
