@@ -41,6 +41,7 @@
  *       Various small improvements
  * 2.11  wavelength was undefined for .tiff files
  * 2.12  fixed temporal median background subtraction. (was broken in 2.1 and 2.11)
+ * 2.13  fixed two JSON mistakes
  */
 Version = 2.12;
 
@@ -258,8 +259,7 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 
 	//save the settings (Trying to stick to JSON for this)
 	jsonfile = substring(outputcsv,0,lengthOf(outputcsv)-4) + "_TS.json";
-	File.delete(jsonfile)
-;
+	File.delete(jsonfile);
 	f = File.open(jsonfile);
 	
 	print(f, "{\"Super Resolution Post Processing Settings\": {");
@@ -275,6 +275,7 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 		input2 = input;
 		affine2=affine;
 	}
+	if (wavelength==""){wavelength = 0;}
 	print(f, "  \"File Location\" : \""+input2+"\",");
 	print(f, "  \"Temporal Median Filtering\" : {");
 	print(f, "    \"Applied\" : "+makeBool(Bool_ChromCorr)+",");
@@ -327,7 +328,7 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 	print(f, "  \"Drift correction\" :{");
 	print(f, "    \"Applied\" : "+makeBool(Bool_DriftCorr)+",");
 	print(f, "    \"Magnification\" : "+ts_drift_magnification+",");
-	print(f, "    \"Steps\" : "+ts_drift_steps+",");
+	print(f, "    \"Steps\" : "+ts_drift_steps);
 	print(f, "   },");
 	print(f, "  \"Merging of reappearing molecules\" :{");
 	print(f, "    \"Applied\" : "+makeBool(Bool_AutoMerge)+",");
