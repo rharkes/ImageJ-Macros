@@ -16,12 +16,16 @@
 @Boolean(label = "16-bit output instead of 32-bit", value=false) Bool_16bit
 @Boolean(label = "Display images while processing?", value=false) Bool_display
 
-
+@Float(label = "Gain conversion factor of the camera (photoelectrons to ADU)", value=11.71) photons2adu
+@Integer(label = "EM gain (set to 0 for no EM; value will be overwritten if found in the metadata)", value = 50) EM_gain
+@Float(label = "Pixel size [nm] (value will be overwritten if found in the metadata)", value = 100) pixel_size
+if (EM_gain>0) isemgain=true;
+else isemgain=false;
 
 /*
  * Macro template to process multiple images in a folder
  * By B.van den Broek, R.Harkes & L.Nahidi
- * 19-11-2018
+ * 17-12-2018
  * 
  * Changelog
  * 1.1:  weighted least squares, threshold to 2*std(Wave.F1)
@@ -42,18 +46,16 @@
  * 2.11  wavelength was undefined for .tiff files
  * 2.12  fixed temporal median background subtraction. (was broken in 2.1 and 2.11)
  * 2.13  fixed two JSON mistakes
+ * 2.14  Added input parameters pixel_size and EM_gain in case the file extension is *not* .lif (e.g. no metadata retreival)
  */
-Version = 2.12;
+Version = 2.14;
 
 //VARIABLES
 
 //Camera Setup
-photons2adu = 11.71;	//Gain conversion factor of the camera
-default_EM_gain=100; 	//This values will be overwritten if the correct value is found in the .lif file
-default_pixel_size=100; //This values will be overwritten if the correct value is found in the .lif file
-isemgain=true;			//This values will be overwritten if the correct value is found in the .lif file
 readoutnoise=0;
 quantumefficiency=1;
+
 
 //Background Subtraction
 window = 501;
@@ -98,7 +100,7 @@ if(!File.exists(output)) {
 	else exit;
 }
 
-print("---AUTOMATIC THUNDERSTORM---");
+print("---AUTOMATIC THUNDERSTORM ANALYSIS---");
 if(Bool_display==false) setBatchMode(true);
 processFolder(input);
 if(nImages>0) run("Close All");
@@ -136,7 +138,7 @@ function processFile(input, output, file) {
 		Ext.getSizeZ(sizeZ);
 		Ext.getSeriesName(seriesName);
 		
-		if((sizeT>1) || (sizeZ>1&&suffix==".tif")) {
+		if((sizeT>1) || (sizeZ>1&&suffix!="lif") || (sizeZ>1&&suffix!=".lif")) {
 			if (nr_series>1){ //feedback & renaming of the outputfiles
 				print("Processing file "+inputfile+" ; series "+n+1+"/"+nr_series);
 				if(n==0){
@@ -150,14 +152,12 @@ function processFile(input, output, file) {
 			run("Close All");
 			run("Bio-Formats Importer", "open=[" + inputfile + "] autoscale color_mode=Default view=Hyperstack stack_order=XYCZT series_"+n+1);
 			
-			EM_gain = default_EM_gain;
-			getPixelSize(unit,pixel_size,pixel_size);
+			getPixelSize(unit,pixel_size_image,pixel_size_image);
 			if(unit=="microns"||unit=="micron"||unit=="um"){
-				pixel_size = pixel_size*1000;	//set pixel size in nm
-			}else if(unit=="pixels") {
-				print("Warning: pixel size not found. Assuming 100nm/pixel.");
-				pixel_size = default_pixel_size;
+				pixel_size = pixel_size_image*1000;	//set pixel size in nm
+				print("pixel size found: "+pixel_size+" nm\n");
 			}
+			else print("Warning: pixel size not found. Assuming "+pixel_size+" nm.\n");
 			if (endsWith(suffix,"lif")){  //Get info from metadata of the .lif file
 				Ext.getSeriesMetadataValue("Image|ATLCameraSettingDefinition|WideFieldChannelConfigurator|WideFieldChannelInfo|FluoCubeName",wavelength); //get wavelength
 				if(Bool_ChromCorr&&wavelength!=0) {
@@ -225,7 +225,7 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 	}
 	saveAs("Tiff", outputtiff);
 
-	//Chromatic Aberration Correction
+	//Chromatic Aberration Correction. Wavelength should be found in the metadata, or the last 3 cheracters of the filename.
 	if (Bool_ChromCorr){
 		print("wavelength = " + wavelength + " nm");
 		if (wavelength == "642"){
@@ -235,8 +235,8 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 		}else if (wavelength == "488") {
 			affine = affine_transform_488;
 		}else {
-			print("Warning: unknown wavelength ("+wavelength+" nm). No chromatic aberration correction will be applied");
-			wavelength=0;
+			print("\\Update:Warning: unknown wavelength ("+wavelength+" nm). No chromatic aberration correction will be applied");
+			wavelength="";
 			affine = "";
 		}
 	
@@ -275,7 +275,7 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 		input2 = input;
 		affine2=affine;
 	}
-	if (wavelength==""){wavelength = 0;}
+	if (wavelength==""){wavelength = "NaN";}
 	print(f, "  \"File Location\" : \""+input2+"\",");
 	print(f, "  \"Temporal Median Filtering\" : {");
 	print(f, "    \"Applied\" : "+makeBool(Bool_ChromCorr)+",");
@@ -347,8 +347,7 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 	print(f, "    \"Applied Affine Transform\" : \"" + affine2+"\"");
 	print(f, "   }");
 	print(f, "}}");
-	File.close(f)
-;
+	File.close(f);
 }	
 
 	rd_force_dx = true;
