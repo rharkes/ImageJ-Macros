@@ -5,7 +5,7 @@
 @String(label = "Sub-pixel localization method", choices={"PSF: Integrated Gaussian", "PSF: Gaussian", "PSF: Elliptical Gaussian (3D astigmatism)", "Radial symmetry", "Centroid of local neighborhood", "Phasor Fitting", "No estimator"}) ts_estimator
 @String(label = "Fitting method", choices={"Least squares", "Weighted Least squares", "Maximum likelihood"}) ts_method
 @Boolean(label = "Apply Drift Correction", value=true) Bool_DriftCorr
-@Boolean(label = "Apply Chromatic Abberation Correction", value=true) Bool_ChromCorr
+@Boolean(label = "Apply Chromatic Aberration Correction", value=true) Bool_ChromCorr
 @Integer(label = "Drift correction steps", value=5) ts_drift_steps
 @File(label = "Chromatic aberration directory", style = "directory", value="C:\\Temp", description="The directory where the chromatic aberration JSON files are stored") jsondir
 
@@ -30,7 +30,7 @@ else isemgain=false;
  * Changelog
  * 1.1:  weighted least squares, threshold to 2*std(Wave.F1)
  * 1.2:  error at square brackets, restructure for multi-image .lif, automatic wavelength detection from .lif files
- *       optional chromatic abberation correction enables automatic detection of wavelenth and corresponding affine transformation
+ *       optional chromatic aberration correction enables automatic detection of wavelenth and corresponding affine transformation
  * 1.3:  Save Settings to .JSON file    
  * 1.31: Added automatic merging
  * 1.32: Fixed a bug concerning chromatic aberration (crash ifit was not applied)
@@ -48,7 +48,7 @@ else isemgain=false;
  * 2.13  fixed two JSON mistakes
  * 2.14  Added input parameters pixel_size and EM_gain in case the file extension is *not* .lif (e.g. no metadata retreival)
  */
-Version = 2.14;
+Version = 2.15;
 
 //VARIABLES
 
@@ -243,7 +243,7 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 		if (affine!="") {
 			run("Close All");
 			outputcsv2 = substring(outputcsv,0,lengthOf(outputcsv)-4) + "_chromcorr.csv";
-			print("Chromatic Abberation corrected result in: " + outputcsv2);
+			print("Chromatic Aberration corrected result in: " + outputcsv2);
 			run("Do Affine", "csvfile1=["+ outputcsv +"] csvfile2=["+ outputcsv2 + "] affine_file=["+affine+"]");
 			run("Import results", "detectmeasurementprotocol=false filepath=["+ outputcsv2 + "] fileformat=[CSV (comma separated)] livepreview=false rawimagestack= startingframe=1 append=false");
 			run("Visualization", "imleft=0.0 imtop=0.0 imwidth=180.0 imheight=180.0 renderer=[Averaged shifted histograms] magnification=10.0 colorize=false threed=false shifts=2 repaint=50");
@@ -340,7 +340,7 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 	print(f, "  \"Filtering\" :{");
 	print(f, "    \"Filtering string\" : \""+filtering_string+"\"");
 	print(f, "   },");
-	print(f, "  \"Chromatic Abberation Correction\" :{");
+	print(f, "  \"Chromatic Aberration Correction\" :{");
 	print(f, "    \"Requested\" : "+makeBool(Bool_ChromCorr)+",");
 	print(f, "    \"Applied\" : "+makeBool((affine!=""))+",");
 	print(f, "    \"Wavelength\" : "+ wavelength+",");
