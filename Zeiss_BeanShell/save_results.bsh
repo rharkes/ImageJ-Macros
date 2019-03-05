@@ -1,0 +1,38 @@
+import ij.IJ;
+import ij.measure.ResultsTable;
+import java.util.Date;
+import java.util.Scanner;
+
+import javax.swing.*;
+
+JFrame frame = new JFrame("Filename Dialog");
+String filename = JOptionPane.showInputDialog(frame, "Enter Filename");
+if (!(filename== null||filename.length() == 0)){
+	long datems = new Date().getTime();
+	Date date = new Date();
+	int temp = date.getYear()+1900;
+	String year = temp.toString();
+	int temp = date.getMonth()+1;
+	String month = IJ.pad(temp,2);
+	String day = IJ.pad(date.getDate(),2);
+	File directory = new File("D:\\Data\\"+year+"\\"+month+"\\"+day);
+	File file = new File(directory+"\\"+filename+".tif");
+	if (!directory.exists()){
+		directory.mkdirs();
+	} else {
+		int ct = 1;
+		filenamenew = filename;
+		while (file.exists()){
+			filenamenew = filename +"("+ct+")";
+			file = new File(directory+"\\"+filenamenew+".tif");
+			ct=ct+1;
+		}
+		filename = filenamenew;
+	}
+	IJ.run("Input/Output...", "file=.csv copy_row save_column save_row");	
+	IJ.saveAs("Results", directory+"\\"+filename+".csv");
+	print("save=["+directory+"\\"+filename+".tif]");
+	IJ.run(imp, "Save", "save=["+directory+"\\"+filename+".tif]");	
+} else {
+	print("cancelled");
+}

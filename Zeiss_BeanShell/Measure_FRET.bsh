@@ -121,9 +121,9 @@ for (i=0;i<(NROI/2);i++){
 renderer.setUseFillPaint(true);
 
 //Ratio
-JFreeChart chart_ratio = ChartFactory.createTimeSeriesChart("Ratio (L/R)", // Title
+JFreeChart chart_ratio = ChartFactory.createTimeSeriesChart("Ratio (R/L)", // Title
           "Time(s)", // x-axis Label
-          "Left/Right", // y-axis Label
+          "Right/Left", // y-axis Label
           dataset_ratio, // Dataset
           true, // Show Legend
           true, // Use tooltips
@@ -203,7 +203,7 @@ while (mm.AcquisitionEngine.isAcquisitionRunning()){
 				
 				series_left.add(elapsedTime, data_left_bgsubtr);
 				series_right.add(elapsedTime, data_right_bgsubtr);
-				series_ratio.add(elapsedTime, data_left_bgsubtr/data_right_bgsubtr);
+				series_ratio.add(elapsedTime, data_right_bgsubtr/data_left_bgsubtr);
 			}
 			elapsedTime = System.currentTimeMillis()-startTime-3600000;
 			rm.runCommand("Show All");
@@ -230,19 +230,19 @@ chart_left.setNotify(true);
 chart_right.setNotify(true);
 chart_ratio.setNotify(true);
 ImagePlus imp = WindowManager.getCurrentImage();
-nFrame = imp.getNFrames();
+nFrames = imp.getNFrames();
 ResultsTable rt = new ResultsTable();
 rm.runCommand("Deselect");
 rt = rm.multiMeasure(imp);
-for (i=0;i<nFrame;i++){
+for (i=0;i<nFrames;i++){
 	time = Double.valueOf(i)*Double.valueOf(frameTime)/1000;
 	rt.setValue("time(s)",i,time);
 }
 
 rt.show("Results");
-data_left = new double[NROI][nFrame];
-data_right = new double[NROI][nFrame];
-data_ratio = new double[NROI][nFrame];
+data_left = new double[NROI][nFrames];
+data_right = new double[NROI][nFrames];
+data_ratio = new double[NROI][nFrames];
 for (i=0;i<NROI;i+=2){
 	series_left = dataset_left.getSeries(names[i]);
 	series_left.clear();
@@ -250,12 +250,13 @@ for (i=0;i<NROI;i+=2){
 	series_right.clear();
 	series_ratio = dataset_ratio.getSeries(names[i]);
 	series_ratio.clear();
-	for (j=0;j<nFrame;j++){
+	for (j=0;j<nFrames;j++){
 		data_left[i][j] = rt.getValueAsDouble(i,j) - rt.getValueAsDouble(NROI+(i%2),j);
 		data_right[i][j] = rt.getValueAsDouble(1+i,j) - rt.getValueAsDouble(1+NROI+(i%2),j);
-		data_ratio[i][j] = data_left[i][j]/data_right[i][j];
+		data_ratio[i][j] = data_right[i][j]/data_left[i][j];
 		series_left.add((j*frameTime)-3600000, data_left[i][j]);
 		series_right.add((j*frameTime)-3600000, data_right[i][j]);
 		series_ratio.add((j*frameTime)-3600000, data_ratio[i][j]);
 	}
 }
+
