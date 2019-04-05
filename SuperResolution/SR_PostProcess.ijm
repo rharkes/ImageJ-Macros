@@ -47,8 +47,9 @@ else isemgain=false;
  * 2.12  fixed temporal median background subtraction. (was broken in 2.1 and 2.11)
  * 2.13  fixed two JSON mistakes
  * 2.14  Added input parameters pixel_size and EM_gain in case the file extension is *not* .lif (e.g. no metadata retreival)
+ * 2.15  JSON does not understand NaN (nor does it know infinite or -infinite). So we make it null.
  */
-Version = 2.14;
+Version = 2.15;
 
 //VARIABLES
 
@@ -275,7 +276,7 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 		input2 = input;
 		affine2=affine;
 	}
-	if (wavelength==""){wavelength = "NaN";}
+	if (wavelength==""){wavelength = "null";}
 	print(f, "  \"File Location\" : \""+input2+"\",");
 	print(f, "  \"Temporal Median Filtering\" : {");
 	print(f, "    \"Applied\" : "+makeBool(Bool_ChromCorr)+",");
