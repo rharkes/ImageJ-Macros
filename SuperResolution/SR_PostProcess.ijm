@@ -48,8 +48,9 @@ else isemgain=false;
  * 2.13  fixed two JSON mistakes
  * 2.14  Added input parameters pixel_size and EM_gain in case the file extension is *not* .lif (e.g. no metadata retreival)
  * 2.15  JSON does not understand NaN (nor does it know infinite or -infinite). So we make it null.
+ * 2.16  No Renderer also means not saving the TS image. 
  */
-Version = 2.15;
+Version = 2.16;
 
 //VARIABLES
 
@@ -214,18 +215,19 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 	}
 
 	//rendering
-	rd_force_dx = true;
-	rd_dx=10;
-	rd_dzforce=false;
-	run("Visualization", "imleft=0.0 imtop=0.0 imwidth="+IMwidth+" imheight="+IMheight+" renderer=["+ts_renderer+"] dxforce="+rd_force_dx+" magnification="+ts_magnification+" colorize="+ts_colorize+" dx="+rd_dx+" threed="+ts_threed+" dzforce="+rd_dzforce);
-	
-	if(Bool_16bit){
-		run("Conversions...", "scale");
-		resetMinAndMax();
-		run("16-bit");
+	if (ts_renderer != "No Renderer"){
+		rd_force_dx = true;
+		rd_dx=10;
+		rd_dzforce=false;
+		run("Visualization", "imleft=0.0 imtop=0.0 imwidth="+IMwidth+" imheight="+IMheight+" renderer=["+ts_renderer+"] dxforce="+rd_force_dx+" magnification="+ts_magnification+" colorize="+ts_colorize+" dx="+rd_dx+" threed="+ts_threed+" dzforce="+rd_dzforce);
+		
+		if(Bool_16bit){
+			run("Conversions...", "scale");
+			resetMinAndMax();
+			run("16-bit");
+		}
+		saveAs("Tiff", outputtiff);
 	}
-	saveAs("Tiff", outputtiff);
-
 	//Chromatic Aberration Correction. Wavelength should be found in the metadata, or the last 3 cheracters of the filename.
 	if (Bool_ChromCorr){
 		print("wavelength = " + wavelength + " nm");
