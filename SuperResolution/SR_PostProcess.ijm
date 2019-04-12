@@ -4,7 +4,7 @@
 @Boolean(label = "Apply Temporal Median Subtraction", value=true) Bool_TempMed
 @String(label = "Sub-pixel localization method", choices={"PSF: Integrated Gaussian", "PSF: Gaussian", "PSF: Elliptical Gaussian (3D astigmatism)", "Radial symmetry", "Centroid of local neighborhood", "Phasor Fitting", "No estimator"}) ts_estimator
 @String(label = "Fitting method", choices={"Least squares", "Weighted Least squares", "Maximum likelihood"}) ts_method
-@String(label = "Peak threshold", choices={"2*std(Wave.F1)", "std(Wave.F1)"}) ts_method
+@String(label = "Peak threshold", choices={"2*std(Wave.F1)", "std(Wave.F1)"}) ts_threshold
 @Integer(label = "Fit radius", value=3) ts_fitradius
 @Boolean(label = "Apply Drift Correction", value=true) Bool_DriftCorr
 @Boolean(label = "Apply Chromatic Abberation Correction", value=true) Bool_ChromCorr
@@ -56,8 +56,9 @@ else isemgain=false;
  *       Allow fitradius and filtersettings in GUI
  *       Visualization after chromcorr was still average shifted histogram
  * 2.21  Wrong options in fitradius and peakthreshold
+ * 2.22  ts_threshold was wrongly ts_method
  */
-Version = 2.21;
+Version = 2.22;
 
 //VARIABLES
 
