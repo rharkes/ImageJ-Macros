@@ -4,6 +4,8 @@
 @Boolean(label = "Apply Temporal Median Subtraction", value=true) Bool_TempMed
 @String(label = "Sub-pixel localization method", choices={"PSF: Integrated Gaussian", "PSF: Gaussian", "PSF: Elliptical Gaussian (3D astigmatism)", "Radial symmetry", "Centroid of local neighborhood", "Phasor Fitting", "No estimator"}) ts_estimator
 @String(label = "Fitting method", choices={"Least squares", "Weighted Least squares", "Maximum likelihood"}) ts_method
+@String(label = "Fit radius", choices={"Least squares", "Weighted Least squares", "Maximum likelihood"}) ts_method
+@Integer(label = "Peak threshold", value=3) ts_fitradius
 @Boolean(label = "Apply Drift Correction", value=true) Bool_DriftCorr
 @Boolean(label = "Apply Chromatic Abberation Correction", value=true) Bool_ChromCorr
 @Integer(label = "Drift correction steps", value=5) ts_drift_steps
@@ -19,13 +21,14 @@
 @Float(label = "Gain conversion factor of the camera (photoelectrons to ADU)", value=11.71) photons2adu
 @Integer(label = "EM gain (set to 0 for no EM; value will be overwritten if found in the metadata)", value = 50) EM_gain
 @Float(label = "Pixel size [nm] (value will be overwritten if found in the metadata)", value = 100) pixel_size
+
 if (EM_gain>0) isemgain=true;
 else isemgain=false;
 
 /*
  * Macro template to process multiple images in a folder
  * By B.van den Broek, R.Harkes & L.Nahidi
- * 17-12-2018
+ * 12-04-20189
  * 
  * Changelog
  * 1.1:  weighted least squares, threshold to 2*std(Wave.F1)
@@ -49,15 +52,17 @@ else isemgain=false;
  * 2.14  Added input parameters pixel_size and EM_gain in case the file extension is *not* .lif (e.g. no metadata retreival)
  * 2.15  JSON does not understand NaN (nor does it know infinite or -infinite). So we make it null.
  * 2.16  No Renderer also means not saving the TS image. 
+ * 2.2   Change default_EM_Gain
+ *       Allow fitradius and filtersettings in GUI
+ *       Visualization after chromcorr was still average shifted histogram
  */
-Version = 2.16;
+Version = 2.2;
 
 //VARIABLES
 
 //Camera Setup
 readoutnoise=0;
 quantumefficiency=1;
-
 
 //Background Subtraction
 window = 501;
@@ -72,10 +77,10 @@ ts_scale = 2;
 ts_order = 3;
 ts_detector = "Local maximum";
 ts_connectivity = "8-neighbourhood";
-ts_threshold = "2*std(Wave.F1)";
+//ts_threshold = set in GUI
 //ts_estimator = set in GUI
 ts_sigma = 1.2;
-ts_fitradius = 5;
+//ts_fitradius = set in GUI
 //ts_method = set in GUI
 ts_full_image_fitting = false;
 ts_mfaenabled = false;
@@ -215,20 +220,19 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 	}
 
 	//rendering
-	if (ts_renderer != "No Renderer"){
-		rd_force_dx = true;
-		rd_dx=10;
-		rd_dzforce=false;
-		run("Visualization", "imleft=0.0 imtop=0.0 imwidth="+IMwidth+" imheight="+IMheight+" renderer=["+ts_renderer+"] dxforce="+rd_force_dx+" magnification="+ts_magnification+" colorize="+ts_colorize+" dx="+rd_dx+" threed="+ts_threed+" dzforce="+rd_dzforce);
-		
-		if(Bool_16bit){
-			run("Conversions...", "scale");
-			resetMinAndMax();
-			run("16-bit");
-		}
-		saveAs("Tiff", outputtiff);
+	rd_force_dx = true;
+	rd_dx=10;
+	rd_dzforce=false;
+	run("Visualization", "imleft=0.0 imtop=0.0 imwidth="+IMwidth+" imheight="+IMheight+" renderer=["+ts_renderer+"] dxforce="+rd_force_dx+" magnification="+ts_magnification+" colorize="+ts_colorize+" dx="+rd_dx+" threed="+ts_threed+" dzforce="+rd_dzforce);
+	
+	if(Bool_16bit){
+		run("Conversions...", "scale");
+		resetMinAndMax();
+		run("16-bit");
 	}
-	//Chromatic Aberration Correction. Wavelength should be found in the metadata, or the last 3 cheracters of the filename.
+	saveAs("Tiff", outputtiff);
+
+	//Chromatic Aberration Correction
 	if (Bool_ChromCorr){
 		print("wavelength = " + wavelength + " nm");
 		if (wavelength == "642"){
@@ -249,7 +253,7 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 			print("Chromatic Abberation corrected result in: " + outputcsv2);
 			run("Do Affine", "csvfile1=["+ outputcsv +"] csvfile2=["+ outputcsv2 + "] affine_file=["+affine+"]");
 			run("Import results", "detectmeasurementprotocol=false filepath=["+ outputcsv2 + "] fileformat=[CSV (comma separated)] livepreview=false rawimagestack= startingframe=1 append=false");
-			run("Visualization", "imleft=0.0 imtop=0.0 imwidth=180.0 imheight=180.0 renderer=[Averaged shifted histograms] magnification=10.0 colorize=false threed=false shifts=2 repaint=50");
+			run("Visualization", "imleft=0.0 imtop=0.0 imwidth="+IMwidth+" imheight="+IMheight+" renderer=["+ts_renderer+"] dxforce="+rd_force_dx+" magnification="+ts_magnification+" colorize="+ts_colorize+" dx="+rd_dx+" threed="+ts_threed+" dzforce="+rd_dzforce);
 			outputtiff_chromcorr = substring(outputtiff,0,lengthOf(outputtiff)-4) + "_chromcorr.tif";
 			if(Bool_16bit){
 				run("Conversions...", "scale");
@@ -262,9 +266,10 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 
 	//save the settings (Trying to stick to JSON for this)
 	jsonfile = substring(outputcsv,0,lengthOf(outputcsv)-4) + "_TS.json";
-	File.delete(jsonfile);
+	File.delete(jsonfile)
+;
 	f = File.open(jsonfile);
-	
+	if (wavelength==""){wavelength = "null";}
 	print(f, "{\"Super Resolution Post Processing Settings\": {");
 	print(f, "  \"Version\" : \""+Version+"\",");
 	print(f, "  \"Date\" : \""+getDateTime()+"\",");
@@ -278,7 +283,6 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 		input2 = input;
 		affine2=affine;
 	}
-	if (wavelength==""){wavelength = "null";}
 	print(f, "  \"File Location\" : \""+input2+"\",");
 	print(f, "  \"Temporal Median Filtering\" : {");
 	print(f, "    \"Applied\" : "+makeBool(Bool_ChromCorr)+",");
@@ -350,7 +354,8 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 	print(f, "    \"Applied Affine Transform\" : \"" + affine2+"\"");
 	print(f, "   }");
 	print(f, "}}");
-	File.close(f);
+	File.close(f)
+;
 }	
 
 	rd_force_dx = true;
