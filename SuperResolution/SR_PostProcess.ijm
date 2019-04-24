@@ -16,7 +16,8 @@
 @String(label="Visualization Method",choices={"Averaged shifted histograms","Scatter plot","Normalized Gaussian","Histograms","No Renderer"}) ts_renderer
 
 @Boolean(label = "16-bit output instead of 32-bit", value=false) Bool_16bit
-@Boolean(label = "Display images while processing?", value=false) Bool_display
+
+@Boolean(label = "Display images while processing?", value=false) Bool_display
 
 @Float(label = "Gain conversion factor of the camera (photoelectrons to ADU)", value=11.71) photons2adu
 @Integer(label = "EM gain (set to 0 for no EM; value will be overwritten if found in the metadata)", value = 50) EM_gain
@@ -57,8 +58,9 @@ else isemgain=false;
  *       Visualization after chromcorr was still average shifted histogram
  * 2.21  Wrong options in fitradius and peakthreshold
  * 2.22  ts_threshold was wrongly ts_method
+ * 2.30  Save RAW-csv and filtered-csv. Affine transform on filtered-csv data.
  */
-Version = 2.22;
+Version = 2.3;
 
 //VARIABLES
 
@@ -109,7 +111,8 @@ if(!File.exists(output)) {
 	else exit;
 }
 
-print("---AUTOMATIC THUNDERSTORM ANALYSIS---");
+print("---AUTOMATIC THUNDERSTORM ANALYSIS---")
+;
 if(Bool_display==false) setBatchMode(true);
 processFolder(input);
 if(nImages>0) run("Close All");
@@ -121,7 +124,8 @@ function processFolder(input) {
 	list = Array.sort(list);
 	for (i = 0; i < list.length; i++) {
 	input_path = input + File.separator + list[i];
-		if(File.isDirectory(input_path) && (substring(input_path,0,lengthOf(input_path)-1) != output))	//Skip folder if it is the output folder
+		if(File.isDirectory(input_path) && (substring(input_path,0,lengthOf(input_path)-1) != output)
+)	//Skip folder if it is the output folder
 			processFolder(input_path);
 		if(endsWith(list[i], suffix))
 			processFile(input, output, list[i]);
@@ -196,7 +200,8 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 	run("Run analysis", "filter=["+ts_filter+"] scale="+ts_scale+" order="+ts_order+" detector=["+ts_detector+"] connectivity=["+ts_connectivity+"] threshold=["+ts_threshold+
 	  "] estimator=["+ts_estimator+"] sigma="+ts_sigma+" fitradius="+ts_fitradius+" method=["+ts_method+"] full_image_fitting="+ts_full_image_fitting+" mfaenabled="+ts_mfaenabled+
 	  " renderer=["+ts_renderer+"] magnification="+ts_magnification+" colorize="+ts_colorize+" threed="+ts_threed+" shifts="+ts_shifts+" repaint="+ts_repaint);
-	run("Export results", "floatprecision="+ts_floatprecision+" filepath=["+ outputcsv + "] fileformat=[CSV (comma separated)] sigma=true intensity=true offset=true saveprotocol=false x=true y=true bkgstd=true id=true uncertainty_xy=true frame=true");
+	outputcsvRAW = substring(outputcsv,0,lengthOf(outputcsv)-4) + "_RAW.csv";
+	run("Export results", "floatprecision="+ts_floatprecision+" filepath=["+ outputcsvRAW + "] fileformat=[CSV (comma separated)] sigma=true intensity=true offset=true saveprotocol=false x=true y=true bkgstd=true id=true uncertainty_xy=true frame=true");
 
 	//Drift correction
 	if (Bool_DriftCorr) {
@@ -216,10 +221,11 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 		run("Show results table", "action=merge zcoordweight="+AutoMerge_ZCoordWeight+" offframes="+AutoMerge_OffFrame+" dist="+AutoMerge_Dist+" framespermolecule="+AutoMerge_FramesPerMolecule);
 	}
 	
-    //Filtering
+    	//Filtering
 	if (filtering_string != "") {
 		run("Show results table", "action=filter formula=[" + filtering_string + "]");
 	}
+	run("Export results", "floatprecision="+ts_floatprecision+" filepath=["+ outputcsv + "] fileformat=[CSV (comma separated)] sigma=true intensity=true offset=true saveprotocol=false x=true y=true bkgstd=true id=true uncertainty_xy=true frame=true");
 
 	//rendering
 	rd_force_dx = true;
@@ -265,13 +271,13 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 			saveAs("Tiff", outputtiff_chromcorr);
 		}
 	}
-
 	//save the settings (Trying to stick to JSON for this)
 	jsonfile = substring(outputcsv,0,lengthOf(outputcsv)-4) + "_TS.json";
 	File.delete(jsonfile)
 ;
 	f = File.open(jsonfile);
-	if (wavelength==""){wavelength = "null";}
+	
+if (wavelength==""){wavelength = "null";}
 	print(f, "{\"Super Resolution Post Processing Settings\": {");
 	print(f, "  \"Version\" : \""+Version+"\",");
 	print(f, "  \"Date\" : \""+getDateTime()+"\",");
