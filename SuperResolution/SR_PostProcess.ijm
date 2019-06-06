@@ -29,7 +29,7 @@ else isemgain=false;
 /*
  * Macro template to process multiple images in a folder
  * By B.van den Broek, R.Harkes & L.Nahidi
- * 12-04-20189
+ * 06-06-2019
  * 
  * Changelog
  * 1.1:  weighted least squares, threshold to 2*std(Wave.F1)
@@ -59,8 +59,9 @@ else isemgain=false;
  * 2.21  Wrong options in fitradius and peakthreshold
  * 2.22  ts_threshold was wrongly ts_method
  * 2.30  Save RAW-csv and filtered-csv. Affine transform on filtered-csv data.
+ * 2.40  Use new ImageJSON plugin for writing json
  */
-Version = 2.3;
+Version = 2.4;
 
 //VARIABLES
 
@@ -193,6 +194,22 @@ function processFile(input, output, file) {
 }
 
 function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
+	//save general settings (JSON)
+	jsonfile = substring(outputcsv,0,lengthOf(outputcsv)-4) + "_TS.json";
+	run("ImageJSON", "file="+jsonfile+" command=create name= value=");
+	
+	run("ImageJSON", "file="+jsonfile+" command=number name=[SR Macro Version] value="+Version);
+	run("ImageJSON", "file="+jsonfile+" command=string name=[Date] value=["+getDateTime()+"]");
+	run("ImageJSON", "file="+jsonfile+" command=string name=[File] value=["+file+"]");
+	run("ImageJSON", "file="+jsonfile+" command=string name=[File Location] value=["+input+"]");
+	
+	run("ImageJSON", "file="+jsonfile+" command=objStart name=[Super Resolution Post Processing Settings] value=");
+	run("ImageJSON", "file="+jsonfile+" command=objStart name=[Temporal Median Filtering] value=");
+	run("ImageJSON", "file="+jsonfile+" command=boolean name=[Applied] value="+Bool_ChromCorr);
+	run("ImageJSON", "file="+jsonfile+" command=number name=[Window] value="+window);
+	run("ImageJSON", "file="+jsonfile+" command=number name=[Offset] value="+offset);
+	run("ImageJSON", "file="+jsonfile+" command=objEnd name= value=");
+	
     //Image Info
     IMwidth = getWidth;
   	IMheight = getHeight;
@@ -202,6 +219,53 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 	  " renderer=["+ts_renderer+"] magnification="+ts_magnification+" colorize="+ts_colorize+" threed="+ts_threed+" shifts="+ts_shifts+" repaint="+ts_repaint);
 	outputcsvRAW = substring(outputcsv,0,lengthOf(outputcsv)-4) + "_RAW.csv";
 	run("Export results", "floatprecision="+ts_floatprecision+" filepath=["+ outputcsvRAW + "] fileformat=[CSV (comma separated)] sigma=true intensity=true offset=true saveprotocol=false x=true y=true bkgstd=true id=true uncertainty_xy=true frame=true");
+	
+	//save the ThunderStorm settings (JSON)
+	run("ImageJSON", "file="+jsonfile+" command=objStart name=[ThunderStorm Settings] value=");
+		run("ImageJSON", "file="+jsonfile+" command=objStart name=[Camera Settings] value=");
+		run("ImageJSON", "file="+jsonfile+" command=number name=[offset] value="+offset);
+		run("ImageJSON", "file="+jsonfile+" command=number name=[quantumefficiency] value="+quantumefficiency);
+		run("ImageJSON", "file="+jsonfile+" command=number name=[emgain] value="+isemgain);
+		run("ImageJSON", "file="+jsonfile+" command=number name=[readoutnoise] value="+readoutnoise);
+		run("ImageJSON", "file="+jsonfile+" command=number name=[photons2adu] value="+photons2adu);
+		run("ImageJSON", "file="+jsonfile+" command=number name=[emgain level] value="+EM_gain);
+		run("ImageJSON", "file="+jsonfile+" command=number name=[pixelsize] value="+pixel_size);
+		run("ImageJSON", "file="+jsonfile+" command=objEnd name= value=");
+		
+		run("ImageJSON", "file="+jsonfile+" command=objStart name=[Image filtering] value=");
+		run("ImageJSON", "file="+jsonfile+" command=string name=[filter] value=["+ts_filter+"]");
+		run("ImageJSON", "file="+jsonfile+" command=number name=[scale] value="+ts_scale);
+		run("ImageJSON", "file="+jsonfile+" command=number name=[order] value="+ts_order);
+		run("ImageJSON", "file="+jsonfile+" command=objEnd name= value=");
+	
+		run("ImageJSON", "file="+jsonfile+" command=objStart name=[Approximate localization of molecules] value=");
+		run("ImageJSON", "file="+jsonfile+" command=string name=[detector] value=["+ts_detector+"]");
+		run("ImageJSON", "file="+jsonfile+" command=string name=[connectivity] value=["+ts_connectivity+"]");
+		run("ImageJSON", "file="+jsonfile+" command=string name=[threshold] value=["+ts_threshold+"]");
+		run("ImageJSON", "file="+jsonfile+" command=objEnd name= value=");
+	
+		run("ImageJSON", "file="+jsonfile+" command=objStart name=[Sub-pixel localization of molecules] value=");
+		run("ImageJSON", "file="+jsonfile+" command=string name=[estimator] value=["+ts_estimator+"]");
+		run("ImageJSON", "file="+jsonfile+" command=number name=[sigma] value="+ts_sigma);
+		run("ImageJSON", "file="+jsonfile+" command=number name=[fitradius] value="+ts_fitradius);
+		run("ImageJSON", "file="+jsonfile+" command=string name=[method] value=["+ts_method+"]");
+		run("ImageJSON", "file="+jsonfile+" command=boolean name=[full image fitting] value="+ts_full_image_fitting);
+		run("ImageJSON", "file="+jsonfile+" command=boolean name=[multi-emitter fitting analysis enabled] value="+ts_mfaenabled);
+		run("ImageJSON", "file="+jsonfile+" command=objEnd name= value=");
+
+		run("ImageJSON", "file="+jsonfile+" command=objStart name=[Visualization of the results] value=");
+		run("ImageJSON", "file="+jsonfile+" command=string name=[renderer] value=["+ts_renderer+"]");
+		run("ImageJSON", "file="+jsonfile+" command=number name=[magnification] value="+ts_magnification);
+		run("ImageJSON", "file="+jsonfile+" command=boolean name=[colorize] value="+ts_colorize);
+		run("ImageJSON", "file="+jsonfile+" command=boolean name=[Three Dimensional] value="+ts_threed);
+		run("ImageJSON", "file="+jsonfile+" command=number name=[Lateral shifts] value="+ts_shifts);
+		run("ImageJSON", "file="+jsonfile+" command=number name=[Update Frequency] value="+ts_repaint);
+		run("ImageJSON", "file="+jsonfile+" command=objEnd name= value=");
+		
+		run("ImageJSON", "file="+jsonfile+" command=objStart name=[Output] value=");
+		run("ImageJSON", "file="+jsonfile+" command=number name=[csv float precision] value="+ts_floatprecision);
+		run("ImageJSON", "file="+jsonfile+" command=objEnd name= value=");		
+	run("ImageJSON", "file="+jsonfile+" command=objEnd name= value=");
 
 	//Drift correction
 	if (Bool_DriftCorr) {
@@ -211,7 +275,13 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 		saveAs("Tiff", outputtiff_drift);
 		close();
 	}
-
+	// save drift correction settings
+	run("ImageJSON", "file="+jsonfile+" command=objStart name=[Drift correction] value=");
+	run("ImageJSON", "file="+jsonfile+" command=boolean name=[Applied] value="+Bool_DriftCorr);
+	run("ImageJSON", "file="+jsonfile+" command=number name=[Magnification] value="+ts_drift_magnification);
+	run("ImageJSON", "file="+jsonfile+" command=number name=[Steps] value="+ts_drift_steps);
+	run("ImageJSON", "file="+jsonfile+" command=objEnd name= value=");
+	
 	//Merge reappearing molecules
 	AutoMerge_ZCoordWeight=0.1;
 	AutoMerge_OffFrame=1;
@@ -220,18 +290,36 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 	if (Bool_AutoMerge) {
 		run("Show results table", "action=merge zcoordweight="+AutoMerge_ZCoordWeight+" offframes="+AutoMerge_OffFrame+" dist="+AutoMerge_Dist+" framespermolecule="+AutoMerge_FramesPerMolecule);
 	}
+	// save merge settings
+	run("ImageJSON", "file="+jsonfile+" command=objStart name=[Merging of reappearing molecules] value=");
+	run("ImageJSON", "file="+jsonfile+" command=boolean name=[Applied] value="+Bool_AutoMerge);
+	run("ImageJSON", "file="+jsonfile+" command=number name=[Z coordinate weight] value="+AutoMerge_ZCoordWeight);
+	run("ImageJSON", "file="+jsonfile+" command=number name=[Maximum off frames] value="+AutoMerge_OffFrame);
+	run("ImageJSON", "file="+jsonfile+" command=number name=[Maximum distance] value="+AutoMerge_Dist);
+	run("ImageJSON", "file="+jsonfile+" command=number name=[Maximum frames per molecule] value="+AutoMerge_FramesPerMolecule);
+	run("ImageJSON", "file="+jsonfile+" command=objEnd name= value=");
 	
-    	//Filtering
+    //Filtering
 	if (filtering_string != "") {
 		run("Show results table", "action=filter formula=[" + filtering_string + "]");
 	}
 	run("Export results", "floatprecision="+ts_floatprecision+" filepath=["+ outputcsv + "] fileformat=[CSV (comma separated)] sigma=true intensity=true offset=true saveprotocol=false x=true y=true bkgstd=true id=true uncertainty_xy=true frame=true");
-
+	// save filtering settings
+	run("ImageJSON", "file="+jsonfile+" command=objStart name=[Filtering] value=");
+	run("ImageJSON", "file="+jsonfile+" command=string name=[Filtering string] value=["+filtering_string+"]");
+	run("ImageJSON", "file="+jsonfile+" command=objEnd name= value=");
+	
 	//rendering
 	rd_force_dx = true;
 	rd_dx=10;
 	rd_dzforce=false;
 	run("Visualization", "imleft=0.0 imtop=0.0 imwidth="+IMwidth+" imheight="+IMheight+" renderer=["+ts_renderer+"] dxforce="+rd_force_dx+" magnification="+ts_magnification+" colorize="+ts_colorize+" dx="+rd_dx+" threed="+ts_threed+" dzforce="+rd_dzforce);
+	// save rendering settings
+	run("ImageJSON", "file="+jsonfile+" command=objStart name=[Rendering] value=");
+	run("ImageJSON", "file="+jsonfile+" command=boolean name=[Force dx] value="+rd_force_dx);
+	run("ImageJSON", "file="+jsonfile+" command=number name=[dx] value="+rd_dx);
+	run("ImageJSON", "file="+jsonfile+" command=boolean name=[Force dz] value="+rd_dzforce);
+	run("ImageJSON", "file="+jsonfile+" command=objEnd name= value=");
 	
 	if(Bool_16bit){
 		run("Conversions...", "scale");
@@ -271,113 +359,17 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 			saveAs("Tiff", outputtiff_chromcorr);
 		}
 	}
-	//save the settings (Trying to stick to JSON for this)
-	jsonfile = substring(outputcsv,0,lengthOf(outputcsv)-4) + "_TS.json";
-	File.delete(jsonfile)
-;
-	f = File.open(jsonfile);
-	
-if (wavelength==""){wavelength = "null";}
-	print(f, "{\"Super Resolution Post Processing Settings\": {");
-	print(f, "  \"Version\" : \""+Version+"\",");
-	print(f, "  \"Date\" : \""+getDateTime()+"\",");
-	print(f, "  \"File\" : \""+file+"\",");
-	//replace backslash in filepath.
-	if (File.separator=="\\"){
-		if(Bool_debug){print("replace backslashes");}
-		input2=replace(input,File.separator,"/");
-		affine2=replace(affine,File.separator,"/");
-	}else {
-		input2 = input;
-		affine2=affine;
-	}
-	print(f, "  \"File Location\" : \""+input2+"\",");
-	print(f, "  \"Temporal Median Filtering\" : {");
-	print(f, "    \"Applied\" : "+makeBool(Bool_ChromCorr)+",");
-	print(f, "    \"window\" : "+window+",");
-	print(f, "    \"offset\" : "+offset);
-	print(f, "   },");
-	print(f, "  \"ThunderStorm Settings\" : {");
-	print(f, "  \"Camera Settings\" : {");
-	print(f, "    \"offset\" : "+offset+",");
-	print(f, "    \"quantumefficiency\" : "+quantumefficiency+",");
-	print(f, "    \"emgain\" : "+makeBool(isemgain)+",");
-	print(f, "    \"readoutnoise\" : "+readoutnoise+",");
-	print(f, "    \"photons2adu\" : "+photons2adu+",");
-	print(f, "    \"emgain level\" : "+EM_gain+",");
-	print(f, "    \"pixelsize\" : "+pixel_size);
-	print(f, "   },");
-	print(f, "  \"Image filtering\" : {");
-	print(f, "    \"filter\" : \""+ts_filter+"\",");
-	print(f, "    \"scale\" : "+ts_scale+",");
-	print(f, "    \"order\" : "+ts_order);
-	print(f, "   },");
-	print(f, "  \"Approximate localization of molecules\" : {");
-	print(f, "    \"detector\" : \""+ts_detector+"\",");
-	print(f, "    \"connectivity\" : \""+ts_connectivity+"\",");
-	print(f, "    \"threshold\" : \""+ts_threshold+"\"");
-	print(f, "   },");
-	print(f, "  \"Sub-pixel localization of molecules\" : {");
-	print(f, "    \"estimator\" : \""+ts_estimator+"\",");
-	print(f, "    \"sigma\" : "+ts_sigma+",");
-	print(f, "    \"fitradius\" : "+ts_fitradius+",");
-	print(f, "    \"method\" : \""+ts_method+"\",");
-	print(f, "    \"full image fitting\" : "+makeBool(ts_full_image_fitting)+",");
-	print(f, "    \"multi-emitter fitting analysis enabled\" : "+makeBool(ts_mfaenabled));
-	print(f, "   },");
-	print(f, "  \"Visualization of the results\" : {");
-	print(f, "    \"renderer\" : \""+ts_renderer+"\",");
-	print(f, "    \"magnification\" : "+ts_magnification+",");
-	print(f, "    \"colorize\" : "+makeBool(ts_colorize)+",");
-	print(f, "    \"Three Dimensional\" : "+makeBool(ts_threed)+",");
-	print(f, "    \"Lateral shifts\" : "+ts_shifts+",");
-	print(f, "    \"Force dx\" : "+makeBool(rd_force_dx)+",");
-	print(f, "    \"dx\" : "+rd_dx+",");
-	print(f, "    \"Force dz\" : "+makeBool(rd_dzforce)+",");
-	print(f, "    \"Update Frequency\" : "+ts_repaint);
-	print(f, "   },");
-	print(f, "  \"Output\" : {");
-	print(f, "    \"csv float precision\" : "+ts_floatprecision);
-	print(f, "   }");
-	print(f, "   },");
-	print(f, "  \"Drift correction\" :{");
-	print(f, "    \"Applied\" : "+makeBool(Bool_DriftCorr)+",");
-	print(f, "    \"Magnification\" : "+ts_drift_magnification+",");
-	print(f, "    \"Steps\" : "+ts_drift_steps);
-	print(f, "   },");
-	print(f, "  \"Merging of reappearing molecules\" :{");
-	print(f, "    \"Applied\" : "+makeBool(Bool_AutoMerge)+",");
-	print(f, "    \"Z coordinate weight\" : "+AutoMerge_ZCoordWeight+",");
-	print(f, "    \"Maximum off frames\" : "+AutoMerge_OffFrame+",");
-	print(f, "    \"Maximum distance\" : "+AutoMerge_Dist+",");
-	print(f, "    \"Maximum frames per molecule\" : "+AutoMerge_FramesPerMolecule);
-	print(f, "   },");
-	print(f, "  \"Filtering\" :{");
-	print(f, "    \"Filtering string\" : \""+filtering_string+"\"");
-	print(f, "   },");
-	print(f, "  \"Chromatic Abberation Correction\" :{");
-	print(f, "    \"Requested\" : "+makeBool(Bool_ChromCorr)+",");
-	print(f, "    \"Applied\" : "+makeBool((affine!=""))+",");
-	print(f, "    \"Wavelength\" : "+ wavelength+",");
-	print(f, "    \"Applied Affine Transform\" : \"" + affine2+"\"");
-	print(f, "   }");
-	print(f, "}}");
-	File.close(f)
-;
-}	
+	// save Chromatic Aberration Correction settings
+	run("ImageJSON", "file="+jsonfile+" command=objStart name=[Chromatic Abberation Correction] value=");
+	run("ImageJSON", "file="+jsonfile+" command=boolean name=[Requested] value="+Bool_ChromCorr);
+	run("ImageJSON", "file="+jsonfile+" command=boolean name=[Applied] value="+(affine!=""));
+	run("ImageJSON", "file="+jsonfile+" command=number name=[Wavelength] value="+wavelength);
+	run("ImageJSON", "file="+jsonfile+" command=string name=[Applied Affine Transform] value=["+affine+"]");
+	run("ImageJSON", "file="+jsonfile+" command=objEnd name= value=");
 
-	rd_force_dx = true;
-	rd_dx=10;
-	rd_dzforce=false;
-function makeBool(in) {
-	if(in){
-		in="true";
-	}else{
-		in="false";
-	}
-	return in;
+	run("ImageJSON", "file="+jsonfile+" command=objEnd name= value="); //end of [Super Resolution Post Processing Settings]
+	run("ImageJSON", "file="+jsonfile+" command=close name= value=");
 }
-
 
 function getDateTime() {
      MonthNames = newArray("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec");
@@ -393,5 +385,4 @@ function getDateTime() {
      if (second<10) {TimeString = TimeString+"0";}
      TimeString = TimeString+second;
      return TimeString;
-}
-
+}
