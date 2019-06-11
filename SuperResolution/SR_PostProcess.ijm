@@ -60,8 +60,9 @@ else isemgain=false;
  * 2.22  ts_threshold was wrongly ts_method
  * 2.30  Save RAW-csv and filtered-csv. Affine transform on filtered-csv data.
  * 2.40  Use new ImageJSON plugin for writing json
+ * 2.41  Forgot [] around the file.
  */
-Version = 2.4;
+Version = 2.41;
 
 //VARIABLES
 
@@ -196,19 +197,19 @@ function processFile(input, output, file) {
 function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 	//save general settings (JSON)
 	jsonfile = substring(outputcsv,0,lengthOf(outputcsv)-4) + "_TS.json";
-	run("ImageJSON", "file="+jsonfile+" command=create name= value=");
+	run("ImageJSON", "file=["+jsonfile+"] command=create name= value=");
 	
-	run("ImageJSON", "file="+jsonfile+" command=number name=[SR Macro Version] value="+Version);
-	run("ImageJSON", "file="+jsonfile+" command=string name=[Date] value=["+getDateTime()+"]");
-	run("ImageJSON", "file="+jsonfile+" command=string name=[File] value=["+file+"]");
-	run("ImageJSON", "file="+jsonfile+" command=string name=[File Location] value=["+input+"]");
+	run("ImageJSON", "file=["+jsonfile+"] command=number name=[SR Macro Version] value="+Version);
+	run("ImageJSON", "file=["+jsonfile+"] command=string name=[Date] value=["+getDateTime()+"]");
+	run("ImageJSON", "file=["+jsonfile+"] command=string name=[File] value=["+file+"]");
+	run("ImageJSON", "file=["+jsonfile+"] command=string name=[File Location] value=["+input+"]");
 	
-	run("ImageJSON", "file="+jsonfile+" command=objStart name=[Super Resolution Post Processing Settings] value=");
-	run("ImageJSON", "file="+jsonfile+" command=objStart name=[Temporal Median Filtering] value=");
-	run("ImageJSON", "file="+jsonfile+" command=boolean name=[Applied] value="+Bool_ChromCorr);
-	run("ImageJSON", "file="+jsonfile+" command=number name=[Window] value="+window);
-	run("ImageJSON", "file="+jsonfile+" command=number name=[Offset] value="+offset);
-	run("ImageJSON", "file="+jsonfile+" command=objEnd name= value=");
+	run("ImageJSON", "file=["+jsonfile+"] command=objStart name=[Super Resolution Post Processing Settings] value=");
+	run("ImageJSON", "file=["+jsonfile+"] command=objStart name=[Temporal Median Filtering] value=");
+	run("ImageJSON", "file=["+jsonfile+"] command=boolean name=[Applied] value="+Bool_ChromCorr);
+	run("ImageJSON", "file=["+jsonfile+"] command=number name=[Window] value="+window);
+	run("ImageJSON", "file=["+jsonfile+"] command=number name=[Offset] value="+offset);
+	run("ImageJSON", "file=["+jsonfile+"] command=objEnd name= value=");
 	
     //Image Info
     IMwidth = getWidth;
@@ -221,51 +222,51 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 	run("Export results", "floatprecision="+ts_floatprecision+" filepath=["+ outputcsvRAW + "] fileformat=[CSV (comma separated)] sigma=true intensity=true offset=true saveprotocol=false x=true y=true bkgstd=true id=true uncertainty_xy=true frame=true");
 	
 	//save the ThunderStorm settings (JSON)
-	run("ImageJSON", "file="+jsonfile+" command=objStart name=[ThunderStorm Settings] value=");
-		run("ImageJSON", "file="+jsonfile+" command=objStart name=[Camera Settings] value=");
-		run("ImageJSON", "file="+jsonfile+" command=number name=[offset] value="+offset);
-		run("ImageJSON", "file="+jsonfile+" command=number name=[quantumefficiency] value="+quantumefficiency);
-		run("ImageJSON", "file="+jsonfile+" command=number name=[emgain] value="+isemgain);
-		run("ImageJSON", "file="+jsonfile+" command=number name=[readoutnoise] value="+readoutnoise);
-		run("ImageJSON", "file="+jsonfile+" command=number name=[photons2adu] value="+photons2adu);
-		run("ImageJSON", "file="+jsonfile+" command=number name=[emgain level] value="+EM_gain);
-		run("ImageJSON", "file="+jsonfile+" command=number name=[pixelsize] value="+pixel_size);
-		run("ImageJSON", "file="+jsonfile+" command=objEnd name= value=");
+	run("ImageJSON", "file=["+jsonfile+"] command=objStart name=[ThunderStorm Settings] value=");
+		run("ImageJSON", "file=["+jsonfile+"] command=objStart name=[Camera Settings] value=");
+		run("ImageJSON", "file=["+jsonfile+"] command=number name=[offset] value="+offset);
+		run("ImageJSON", "file=["+jsonfile+"] command=number name=[quantumefficiency] value="+quantumefficiency);
+		run("ImageJSON", "file=["+jsonfile+"] command=number name=[emgain] value="+isemgain);
+		run("ImageJSON", "file=["+jsonfile+"] command=number name=[readoutnoise] value="+readoutnoise);
+		run("ImageJSON", "file=["+jsonfile+"] command=number name=[photons2adu] value="+photons2adu);
+		run("ImageJSON", "file=["+jsonfile+"] command=number name=[emgain level] value="+EM_gain);
+		run("ImageJSON", "file=["+jsonfile+"] command=number name=[pixelsize] value="+pixel_size);
+		run("ImageJSON", "file=["+jsonfile+"] command=objEnd name= value=");
 		
-		run("ImageJSON", "file="+jsonfile+" command=objStart name=[Image filtering] value=");
-		run("ImageJSON", "file="+jsonfile+" command=string name=[filter] value=["+ts_filter+"]");
-		run("ImageJSON", "file="+jsonfile+" command=number name=[scale] value="+ts_scale);
-		run("ImageJSON", "file="+jsonfile+" command=number name=[order] value="+ts_order);
-		run("ImageJSON", "file="+jsonfile+" command=objEnd name= value=");
+		run("ImageJSON", "file=["+jsonfile+"] command=objStart name=[Image filtering] value=");
+		run("ImageJSON", "file=["+jsonfile+"] command=string name=[filter] value=["+ts_filter+"]");
+		run("ImageJSON", "file=["+jsonfile+"] command=number name=[scale] value="+ts_scale);
+		run("ImageJSON", "file=["+jsonfile+"] command=number name=[order] value="+ts_order);
+		run("ImageJSON", "file=["+jsonfile+"] command=objEnd name= value=");
 	
-		run("ImageJSON", "file="+jsonfile+" command=objStart name=[Approximate localization of molecules] value=");
-		run("ImageJSON", "file="+jsonfile+" command=string name=[detector] value=["+ts_detector+"]");
-		run("ImageJSON", "file="+jsonfile+" command=string name=[connectivity] value=["+ts_connectivity+"]");
-		run("ImageJSON", "file="+jsonfile+" command=string name=[threshold] value=["+ts_threshold+"]");
-		run("ImageJSON", "file="+jsonfile+" command=objEnd name= value=");
+		run("ImageJSON", "file=["+jsonfile+"] command=objStart name=[Approximate localization of molecules] value=");
+		run("ImageJSON", "file=["+jsonfile+"] command=string name=[detector] value=["+ts_detector+"]");
+		run("ImageJSON", "file=["+jsonfile+"] command=string name=[connectivity] value=["+ts_connectivity+"]");
+		run("ImageJSON", "file=["+jsonfile+"] command=string name=[threshold] value=["+ts_threshold+"]");
+		run("ImageJSON", "file=["+jsonfile+"] command=objEnd name= value=");
 	
-		run("ImageJSON", "file="+jsonfile+" command=objStart name=[Sub-pixel localization of molecules] value=");
-		run("ImageJSON", "file="+jsonfile+" command=string name=[estimator] value=["+ts_estimator+"]");
-		run("ImageJSON", "file="+jsonfile+" command=number name=[sigma] value="+ts_sigma);
-		run("ImageJSON", "file="+jsonfile+" command=number name=[fitradius] value="+ts_fitradius);
-		run("ImageJSON", "file="+jsonfile+" command=string name=[method] value=["+ts_method+"]");
-		run("ImageJSON", "file="+jsonfile+" command=boolean name=[full image fitting] value="+ts_full_image_fitting);
-		run("ImageJSON", "file="+jsonfile+" command=boolean name=[multi-emitter fitting analysis enabled] value="+ts_mfaenabled);
-		run("ImageJSON", "file="+jsonfile+" command=objEnd name= value=");
+		run("ImageJSON", "file=["+jsonfile+"] command=objStart name=[Sub-pixel localization of molecules] value=");
+		run("ImageJSON", "file=["+jsonfile+"] command=string name=[estimator] value=["+ts_estimator+"]");
+		run("ImageJSON", "file=["+jsonfile+"] command=number name=[sigma] value="+ts_sigma);
+		run("ImageJSON", "file=["+jsonfile+"] command=number name=[fitradius] value="+ts_fitradius);
+		run("ImageJSON", "file=["+jsonfile+"] command=string name=[method] value=["+ts_method+"]");
+		run("ImageJSON", "file=["+jsonfile+"] command=boolean name=[full image fitting] value="+ts_full_image_fitting);
+		run("ImageJSON", "file=["+jsonfile+"] command=boolean name=[multi-emitter fitting analysis enabled] value="+ts_mfaenabled);
+		run("ImageJSON", "file=["+jsonfile+"] command=objEnd name= value=");
 
-		run("ImageJSON", "file="+jsonfile+" command=objStart name=[Visualization of the results] value=");
-		run("ImageJSON", "file="+jsonfile+" command=string name=[renderer] value=["+ts_renderer+"]");
-		run("ImageJSON", "file="+jsonfile+" command=number name=[magnification] value="+ts_magnification);
-		run("ImageJSON", "file="+jsonfile+" command=boolean name=[colorize] value="+ts_colorize);
-		run("ImageJSON", "file="+jsonfile+" command=boolean name=[Three Dimensional] value="+ts_threed);
-		run("ImageJSON", "file="+jsonfile+" command=number name=[Lateral shifts] value="+ts_shifts);
-		run("ImageJSON", "file="+jsonfile+" command=number name=[Update Frequency] value="+ts_repaint);
-		run("ImageJSON", "file="+jsonfile+" command=objEnd name= value=");
+		run("ImageJSON", "file=["+jsonfile+"] command=objStart name=[Visualization of the results] value=");
+		run("ImageJSON", "file=["+jsonfile+"] command=string name=[renderer] value=["+ts_renderer+"]");
+		run("ImageJSON", "file=["+jsonfile+"] command=number name=[magnification] value="+ts_magnification);
+		run("ImageJSON", "file=["+jsonfile+"] command=boolean name=[colorize] value="+ts_colorize);
+		run("ImageJSON", "file=["+jsonfile+"] command=boolean name=[Three Dimensional] value="+ts_threed);
+		run("ImageJSON", "file=["+jsonfile+"] command=number name=[Lateral shifts] value="+ts_shifts);
+		run("ImageJSON", "file=["+jsonfile+"] command=number name=[Update Frequency] value="+ts_repaint);
+		run("ImageJSON", "file=["+jsonfile+"] command=objEnd name= value=");
 		
-		run("ImageJSON", "file="+jsonfile+" command=objStart name=[Output] value=");
-		run("ImageJSON", "file="+jsonfile+" command=number name=[csv float precision] value="+ts_floatprecision);
-		run("ImageJSON", "file="+jsonfile+" command=objEnd name= value=");		
-	run("ImageJSON", "file="+jsonfile+" command=objEnd name= value=");
+		run("ImageJSON", "file=["+jsonfile+"] command=objStart name=[Output] value=");
+		run("ImageJSON", "file=["+jsonfile+"] command=number name=[csv float precision] value="+ts_floatprecision);
+		run("ImageJSON", "file=["+jsonfile+"] command=objEnd name= value=");		
+	run("ImageJSON", "file=["+jsonfile+"] command=objEnd name= value=");
 
 	//Drift correction
 	if (Bool_DriftCorr) {
@@ -276,11 +277,11 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 		close();
 	}
 	// save drift correction settings
-	run("ImageJSON", "file="+jsonfile+" command=objStart name=[Drift correction] value=");
-	run("ImageJSON", "file="+jsonfile+" command=boolean name=[Applied] value="+Bool_DriftCorr);
-	run("ImageJSON", "file="+jsonfile+" command=number name=[Magnification] value="+ts_drift_magnification);
-	run("ImageJSON", "file="+jsonfile+" command=number name=[Steps] value="+ts_drift_steps);
-	run("ImageJSON", "file="+jsonfile+" command=objEnd name= value=");
+	run("ImageJSON", "file=["+jsonfile+"] command=objStart name=[Drift correction] value=");
+	run("ImageJSON", "file=["+jsonfile+"] command=boolean name=[Applied] value="+Bool_DriftCorr);
+	run("ImageJSON", "file=["+jsonfile+"] command=number name=[Magnification] value="+ts_drift_magnification);
+	run("ImageJSON", "file=["+jsonfile+"] command=number name=[Steps] value="+ts_drift_steps);
+	run("ImageJSON", "file=["+jsonfile+"] command=objEnd name= value=");
 	
 	//Merge reappearing molecules
 	AutoMerge_ZCoordWeight=0.1;
@@ -291,13 +292,13 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 		run("Show results table", "action=merge zcoordweight="+AutoMerge_ZCoordWeight+" offframes="+AutoMerge_OffFrame+" dist="+AutoMerge_Dist+" framespermolecule="+AutoMerge_FramesPerMolecule);
 	}
 	// save merge settings
-	run("ImageJSON", "file="+jsonfile+" command=objStart name=[Merging of reappearing molecules] value=");
-	run("ImageJSON", "file="+jsonfile+" command=boolean name=[Applied] value="+Bool_AutoMerge);
-	run("ImageJSON", "file="+jsonfile+" command=number name=[Z coordinate weight] value="+AutoMerge_ZCoordWeight);
-	run("ImageJSON", "file="+jsonfile+" command=number name=[Maximum off frames] value="+AutoMerge_OffFrame);
-	run("ImageJSON", "file="+jsonfile+" command=number name=[Maximum distance] value="+AutoMerge_Dist);
-	run("ImageJSON", "file="+jsonfile+" command=number name=[Maximum frames per molecule] value="+AutoMerge_FramesPerMolecule);
-	run("ImageJSON", "file="+jsonfile+" command=objEnd name= value=");
+	run("ImageJSON", "file=["+jsonfile+"] command=objStart name=[Merging of reappearing molecules] value=");
+	run("ImageJSON", "file=["+jsonfile+"] command=boolean name=[Applied] value="+Bool_AutoMerge);
+	run("ImageJSON", "file=["+jsonfile+"] command=number name=[Z coordinate weight] value="+AutoMerge_ZCoordWeight);
+	run("ImageJSON", "file=["+jsonfile+"] command=number name=[Maximum off frames] value="+AutoMerge_OffFrame);
+	run("ImageJSON", "file=["+jsonfile+"] command=number name=[Maximum distance] value="+AutoMerge_Dist);
+	run("ImageJSON", "file=["+jsonfile+"] command=number name=[Maximum frames per molecule] value="+AutoMerge_FramesPerMolecule);
+	run("ImageJSON", "file=["+jsonfile+"] command=objEnd name= value=");
 	
     //Filtering
 	if (filtering_string != "") {
@@ -305,9 +306,9 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 	}
 	run("Export results", "floatprecision="+ts_floatprecision+" filepath=["+ outputcsv + "] fileformat=[CSV (comma separated)] sigma=true intensity=true offset=true saveprotocol=false x=true y=true bkgstd=true id=true uncertainty_xy=true frame=true");
 	// save filtering settings
-	run("ImageJSON", "file="+jsonfile+" command=objStart name=[Filtering] value=");
-	run("ImageJSON", "file="+jsonfile+" command=string name=[Filtering string] value=["+filtering_string+"]");
-	run("ImageJSON", "file="+jsonfile+" command=objEnd name= value=");
+	run("ImageJSON", "file=["+jsonfile+"] command=objStart name=[Filtering] value=");
+	run("ImageJSON", "file=["+jsonfile+"] command=string name=[Filtering string] value=["+filtering_string+"]");
+	run("ImageJSON", "file=["+jsonfile+"] command=objEnd name= value=");
 	
 	//rendering
 	rd_force_dx = true;
@@ -315,11 +316,11 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 	rd_dzforce=false;
 	run("Visualization", "imleft=0.0 imtop=0.0 imwidth="+IMwidth+" imheight="+IMheight+" renderer=["+ts_renderer+"] dxforce="+rd_force_dx+" magnification="+ts_magnification+" colorize="+ts_colorize+" dx="+rd_dx+" threed="+ts_threed+" dzforce="+rd_dzforce);
 	// save rendering settings
-	run("ImageJSON", "file="+jsonfile+" command=objStart name=[Rendering] value=");
-	run("ImageJSON", "file="+jsonfile+" command=boolean name=[Force dx] value="+rd_force_dx);
-	run("ImageJSON", "file="+jsonfile+" command=number name=[dx] value="+rd_dx);
-	run("ImageJSON", "file="+jsonfile+" command=boolean name=[Force dz] value="+rd_dzforce);
-	run("ImageJSON", "file="+jsonfile+" command=objEnd name= value=");
+	run("ImageJSON", "file=["+jsonfile+"] command=objStart name=[Rendering] value=");
+	run("ImageJSON", "file=["+jsonfile+"] command=boolean name=[Force dx] value="+rd_force_dx);
+	run("ImageJSON", "file=["+jsonfile+"] command=number name=[dx] value="+rd_dx);
+	run("ImageJSON", "file=["+jsonfile+"] command=boolean name=[Force dz] value="+rd_dzforce);
+	run("ImageJSON", "file=["+jsonfile+"] command=objEnd name= value=");
 	
 	if(Bool_16bit){
 		run("Conversions...", "scale");
@@ -360,15 +361,15 @@ function processimage(outputtiff, outputcsv, wavelength, EM_gain, pixel_size) {
 		}
 	}
 	// save Chromatic Aberration Correction settings
-	run("ImageJSON", "file="+jsonfile+" command=objStart name=[Chromatic Abberation Correction] value=");
-	run("ImageJSON", "file="+jsonfile+" command=boolean name=[Requested] value="+Bool_ChromCorr);
-	run("ImageJSON", "file="+jsonfile+" command=boolean name=[Applied] value="+(affine!=""));
-	run("ImageJSON", "file="+jsonfile+" command=number name=[Wavelength] value="+wavelength);
-	run("ImageJSON", "file="+jsonfile+" command=string name=[Applied Affine Transform] value=["+affine+"]");
-	run("ImageJSON", "file="+jsonfile+" command=objEnd name= value=");
+	run("ImageJSON", "file=["+jsonfile+"] command=objStart name=[Chromatic Abberation Correction] value=");
+	run("ImageJSON", "file=["+jsonfile+"] command=boolean name=[Requested] value="+Bool_ChromCorr);
+	run("ImageJSON", "file=["+jsonfile+"] command=boolean name=[Applied] value="+(affine!=""));
+	run("ImageJSON", "file=["+jsonfile+"] command=number name=[Wavelength] value="+wavelength);
+	run("ImageJSON", "file=["+jsonfile+"] command=string name=[Applied Affine Transform] value=["+affine+"]");
+	run("ImageJSON", "file=["+jsonfile+"] command=objEnd name= value=");
 
-	run("ImageJSON", "file="+jsonfile+" command=objEnd name= value="); //end of [Super Resolution Post Processing Settings]
-	run("ImageJSON", "file="+jsonfile+" command=close name= value=");
+	run("ImageJSON", "file=["+jsonfile+"] command=objEnd name= value="); //end of [Super Resolution Post Processing Settings]
+	run("ImageJSON", "file=["+jsonfile+"] command=close name= value=");
 }
 
 function getDateTime() {
