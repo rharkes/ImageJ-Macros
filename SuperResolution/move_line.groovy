@@ -2,6 +2,7 @@ import ij.IJ
 import ij.gui.Roi
 import ij.gui.PolygonRoi
 
+// put file in Fiji.app\plugins\Scripts in order to run it with run("move line");
 nr_of_pixels_to_move = 20
 
 if (ij.WindowManager.getImageCount()==0){
