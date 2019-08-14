@@ -1,10 +1,9 @@
+# @float(label="nr of pixels to move: ") nr_of_pixels_to_move
 import ij.IJ
 import ij.gui.Roi
 import ij.gui.PolygonRoi
 
-// put file in Fiji.app\plugins\Scripts in order to run it with run("move line");
-nr_of_pixels_to_move = 20
-
+// put file in Fiji.app\plugins\Scripts in order to run it with run("move line","nr_of_pixels_to_move=10.0");
 if (ij.WindowManager.getImageCount()==0){
 	IJ.noImage()
 	return
